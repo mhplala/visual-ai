@@ -90,7 +90,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
 <body>
 <header><div class="wrap">
   <h1>看得见的 AI</h1>
-  <p>扩散模型 &amp; 自回归模型 —— 全用图和动手实验讲清楚,不用公式</p>
+  <p>扩散模型 &amp; 自回归模型,全用图和动手实验讲清楚,不用公式</p>
 </div></header>
 
 <nav class="toc"><div class="wrap">
@@ -114,7 +114,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
 <section id="big">
   <div class="kicker">总览</div>
   <h2>两种"生成"的引擎</h2>
-  <p class="lead">AI 画图、写字、生成视频,背后基本就两种思路。先用一句话各抓住灵魂,后面再逐个拆开看。</p>
+  <p class="lead">AI 画图、写字、做视频,说穿了就两种套路。这节先把区别讲清楚,后面每一种再拆开看。</p>
   <div class="demo">
     <div class="row">
       <div class="col">
@@ -128,16 +128,16 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
         <p class="tag">串行逐个生成 · 一步一个</p>
       </div>
     </div>
-    <p class="hint" style="margin-top:14px">👇 下面每一节,左边一句话原理,右边一个你能<b>亲手拖/点</b>的小实验。</p>
+    <p class="hint" style="margin-top:14px">每一节左边一句话讲原理,右边一个能上手拖、能点的小实验。</p>
   </div>
 </section>
 
 <section id="noise">
   <div class="kicker">扩散 · 第 1 步</div>
   <h2>加噪:把图变成雪花点</h2>
-  <p class="lead">扩散模型的起点很反直觉:<b>先学会破坏</b>。我们故意往一张干净图里一点点掺随机噪声,直到它变成纯雪花点。拖下面的滑块,亲眼看这个过程。</p>
+  <p class="lead">扩散模型的起点有点反直觉:它先学会的是怎么破坏。我们故意往干净图里一点点掺噪声,直到整张糊成雪花。拖下面的滑块,自己看一遍。</p>
   <div class="demo">
-    <h4>🌀 实验:噪声滑块</h4>
+    <h4>实验:噪声滑块</h4>
     <div class="hint">从左拖到右 = 时间 t 从 0(干净)走到 100(纯噪声)。这就是扩散的"前向过程"。</div>
     <div class="row">
       <canvas id="cvFwd" width="200" height="160"></canvas>
@@ -153,9 +153,9 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
 <section id="guess">
   <div class="kicker">扩散 · 第 2 步</div>
   <h2>核心:让 AI "猜出掺了多少雪花"</h2>
-  <p class="lead">整个扩散模型,训练时<b>只干一件事</b>:给它一张掺了噪声的图,让它<b>猜出当初掺进去的那团噪声长什么样</b>。猜对了,减掉,就还原了。就这么简单——没有别的目标。</p>
+  <p class="lead">整个扩散模型,训练时其实只干一件事:给它一张掺了噪声的图,让它猜出当初掺进去的噪声长什么样。猜对了,减掉,图就回来了。真就这么简单。</p>
   <div class="demo">
-    <h4>🔍 看一眼这个"猜噪声"的回合</h4>
+    <h4>看一眼这个"猜噪声"的回合</h4>
     <div class="row" style="align-items:flex-start">
       <div style="text-align:center"><canvas id="gNoisy" width="150" height="120"></canvas><div class="tag" style="margin-top:5px">① 带噪的图</div></div>
       <div style="font-size:24px;color:var(--faint);align-self:center">→</div>
@@ -175,7 +175,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>生成:从雪花点里"擦"出一张图</h2>
   <p class="lead">既然 AI 会猜噪声,那生成就反过来:<b>从一团纯雪花出发</b>,猜出噪声 → 擦掉一点 → 图清楚一点 → 再猜再擦……反复几十次,一张全新的图就"显影"出来了。点按钮一步步看。</p>
   <div class="demo">
-    <h4>✨ 实验:一步步去噪</h4>
+    <h4>实验:一步步去噪</h4>
     <div class="row">
       <canvas id="cvRev" width="200" height="160"></canvas>
       <div class="col">
@@ -196,7 +196,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>步数:擦几次?(以及为什么加步数改不了视角)</h2>
   <p class="lead">擦的次数 = 步数。擦得越多越精细越锐;但<b>"画的是什么、什么视角"在第一两步就定下来了</b>,后面只是把它擦清楚。拖滑块感受一下。</p>
   <div class="demo">
-    <h4>🎚 实验:总步数 1 → 50</h4>
+    <h4>实验:总步数 1 → 50</h4>
     <div class="row">
       <canvas id="cvSteps" width="200" height="160"></canvas>
       <div class="col">
@@ -205,15 +205,15 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
       </div>
     </div>
   </div>
-  <div class="anchor">还记得我们那次结论吗——<b>加步数没法把第三人称变成第一人称</b>。原因就在这:视角是"擦"的第一步就定型的低频结构,加步数只让它更清楚,不改它是什么。</div>
+  <div class="anchor">还记得我们那次结论吗,<b>加步数没法把第三人称变成第一人称</b>。原因就在这:视角是"擦"的第一步就定型的低频结构,加步数只让它更清楚,不改它是什么。</div>
 </section>
 
 <section id="vae">
   <div class="kicker">扩散 · 提速核心</div>
   <h2>VAE:不在大图上擦,在"缩略图"上擦</h2>
-  <p class="lead">在 1024×1024 的大图上反复擦太贵了。聪明的做法:先用一个叫 <b>VAE</b> 的压缩器把图压成一张很小的"语义缩略图"(latent),<b>在小图上做完整个扩散</b>,最后再解压回大图。省几十倍算力。</p>
+  <p class="lead">在 1024×1024 的大图上反复擦太贵了。更省的做法:先用一个叫 <b>VAE</b> 的压缩器把图压成一张很小的"语义缩略图"(latent),<b>在小图上做完整个扩散</b>,最后再解压回大图。省几十倍算力。</p>
   <div class="demo">
-    <h4>🗜 它的流水线</h4>
+    <h4>它的流水线</h4>
     <div class="row" style="justify-content:center;text-align:center;gap:10px">
       <div><canvas id="vaeBig1" width="120" height="96"></canvas><div class="tag">大图</div></div>
       <div style="color:var(--diff);font-weight:600">压缩→</div>
@@ -222,7 +222,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
       <div><canvas id="vaeBig2" width="120" height="96"></canvas><div class="tag">还原大图</div></div>
     </div>
   </div>
-  <div class="anchor">你手写的 <b>TAESD</b>、Wan2.2 的 VAE、Cosmos 的 MG-LightVAE —— 全是这个"压缩/解压器"。我们一整晚换更快的 VAE,就是在给这一步提速。</div>
+  <div class="anchor">你手写的 <b>TAESD</b>、Wan2.2 的 VAE、Cosmos 的 MG-LightVAE,全是这个"压缩/解压器"。我们一整晚换更快的 VAE,就是在给这一步提速。</div>
 </section>
 
 <section id="guide">
@@ -230,7 +230,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>提示词强度(guidance):多听话?</h2>
   <p class="lead">怎么让擦出来的图<b>贴合你的文字</b>?办法是让模型同时算"听提示"和"不听提示"两版,然后朝"听提示"的方向<b>使劲推</b>。推多少 = guidance。太小 → 它乱画;太大 → 过曝失真。拖一下。</p>
   <div class="demo">
-    <h4>🎛 实验:guidance 0 → 15</h4>
+    <h4>实验:guidance 0 → 15</h4>
     <div class="row">
       <canvas id="cvGuide" width="200" height="160"></canvas>
       <div class="col">
@@ -239,7 +239,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
       </div>
     </div>
   </div>
-  <div class="anchor">这就是你在 worker 里设的 <b>guidance_scale=3.0 / 5.0</b>。Playground 喜欢 3,Wan 喜欢 5——每个模型的"最佳听话度"不同。</div>
+  <div class="anchor">这就是你在 worker 里设的 <b>guidance_scale=3.0 / 5.0</b>。Playground 喜欢 3,Wan 喜欢 5,每个模型的"最佳听话度"不同。</div>
 </section>
 
 <section id="distill">
@@ -247,10 +247,10 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>蒸馏:把 35 步的老师压成 1 步的学生</h2>
   <p class="lead">原始扩散要擦几十步,慢。<b>蒸馏</b>就是训练一个"学生":让它<b>一步</b>就跳到老师擦几十步的结果。这就是 SDXL-Turbo、你的 1 步 Wan 能"实时"的原因。</p>
   <div class="demo">
-    <h4>⚡️ 老师 vs 学生</h4>
+    <h4>老师 vs 学生</h4>
     <div style="margin:6px 0"><span class="tag">老师(慢):</span><div class="steps-strip" id="teacherDots"></div></div>
     <div style="margin:14px 0 4px"><span class="tag">学生(快):</span>
-      <div class="steps-strip"><span class="dot" style="width:26px;height:26px;opacity:1"></span><span style="color:var(--diff);font-size:13px;margin-left:6px">1 步直达 ⚡️</span></div></div>
+      <div class="steps-strip"><span class="dot" style="width:26px;height:26px;opacity:1"></span><span style="color:var(--diff);font-size:13px;margin-left:6px">1 步直达 </span></div></div>
     <button class="b" id="distillBtn" style="margin-top:14px">▶︎ 演示</button>
   </div>
   <div class="anchor">你跑的 <b>wan_causal_dmd_v2v</b>,名字里的 <b>DMD = Distribution Matching Distillation</b> 就是这种蒸馏:让学生的"出图分布"去对齐老师,所以能 1-2 步出帧。</div>
@@ -261,7 +261,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>下一个词:打字接龙</h2>
   <p class="lead">自回归(就是 Gemini、ChatGPT 那一类)的核心动作只有一个:<b>看着前面所有内容,给每个可能的"下一个词"打分,挑一个,接上去</b>。然后把新句子再喂回去,继续猜下一个。点按钮玩玩。</p>
   <div class="demo">
-    <h4>⌨️ 实验:让它一个词一个词往下写</h4>
+    <h4>实验:让它一个词一个词往下写</h4>
     <div class="sentence" id="sent">夜色中,你握紧了</div>
     <button class="b" id="nextBtn" style="margin-top:12px">预测下一个词 ▶︎</button>
     <button class="b ghost" id="nextReset" style="margin-top:12px">重来</button>
@@ -277,7 +277,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>因果注意力:只能看过去,不能偷看未来</h2>
   <p class="lead">接龙时,第 3 个词只能参考第 1、2 个,<b>不能看后面还没生成的</b>。模型内部用一个"遮罩"强制做到这点。把鼠标放到某一行,看它"能看到谁"。</p>
   <div class="demo">
-    <h4>👁 实验:每个词能看到谁(把鼠标移到左边的字上)</h4>
+    <h4>实验:每个词能看到谁(把鼠标移到左边的字上)</h4>
     <div id="attnGrid" style="max-width:380px"></div>
     <p class="hint" style="margin-top:10px"><span style="color:var(--ar)">■</span> 能看到(过去 + 自己) · <span style="color:var(--faint)">■</span> 被挡住(未来)</p>
   </div>
@@ -289,7 +289,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <h2>世界模型:动作 + 当前帧 → 下一帧</h2>
   <p class="lead">把"下一个词"换成"下一帧",再加上你的<b>操作(按键)</b>当条件,就成了<b>可玩的世界模型</b>。你给方向,它生成你"走过去"后看到的下一帧。这正是你 9877 上跑的 <b>Matrix-Game-3.0</b>。</p>
   <div class="demo">
-    <h4>🎮 实验:按方向键,生成下一帧</h4>
+    <h4>实验:按方向键,生成下一帧</h4>
     <div class="row">
       <canvas id="cvWorld" width="200" height="150"></canvas>
       <div class="col">
@@ -315,7 +315,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
     <tr><td>弱点</td><td class="d">帧间一致性难</td><td class="a">会越生成越漂移</td></tr>
   </table>
   <div class="demo">
-    <h4>🎬 融合体:帧间自回归 + 帧内扩散</h4>
+    <h4>融合体:帧间自回归 + 帧内扩散</h4>
     <div class="hint">这就是 CausVid / StreamDiffusionV2 / Cosmos 的做法。点一下看它怎么一帧帧"擦"出来。</div>
     <div id="mergeStrip" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:8px"></div>
     <button class="b" id="mergeBtn" style="margin-top:14px">▶︎ 生成一段(逐帧)</button>
@@ -326,7 +326,7 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
 <section id="train">
   <div class="kicker">你想成为的人</div>
   <h2>"训练"到底在训什么?其实就 5 行</h2>
-  <p class="lead">最让人惊讶的事:两种模型的"训练目标"各自只有几行。剩下全是<b>规模、架构、数据</b>。看这两段——绿色那行就是它"考试的题目"。</p>
+  <p class="lead">有意思的是,这两种模型的训练目标各自就那么几行,剩下全是规模、架构和数据。看这两段,绿色那行就是它要做的题。</p>
   <h3><span class="pill d">扩散</span> 训练循环</h3>
   <div class="code"><span class="c"># 拿一张图,随机掺噪声,让模型猜噪声</span><br>
 t   = <span class="k">随机</span>(1, T)<br>
@@ -339,7 +339,7 @@ t   = <span class="k">随机</span>(1, T)<br>
 预测 = 模型(前面的词)<br>
 <span class="hl">损失 = 猜错下一个词的程度  # ← 全部目标</span><br>
 反向传播(); 更新()</div>
-  <div class="anchor">你已经有 <b>B200</b> 了——这是别人没有的条件。<b>真正"懂"的最快方式,是亲手训一个小的</b>:几分钟训一个小扩散模型,看它从雪花里长出图;或跑 nanoGPT,看一个小 GPT 学会说人话。要不要下一课我直接在你卡上带你训?</div>
+  <div class="anchor">你已经有 <b>B200</b> 了,这是别人没有的条件。<b>真正"懂"的最快方式,是亲手训一个小的</b>:几分钟训一个小扩散模型,看它从雪花里长出图;或跑 nanoGPT,看一个小 GPT 学会说人话。要不要下一课我直接在你卡上带你训?</div>
 </section>
 
 </main>
@@ -352,7 +352,7 @@ t   = <span class="k">随机</span>(1, T)<br>
     <div><b>③ 前沿</b> · Flow Matching → Consistency Models → DMD 蒸馏</div>
     <div><b>④ 你的主场</b> · VAR → Genie → CausVid → Self-Forcing → Cosmos</div>
   </div>
-  <p style="margin-top:24px;color:var(--faint)">看得见的 AI · 为你做的可视化教程 · 拖一拖、点一点,每个原理都能自己摸出来</p>
+  <p style="margin-top:24px;color:var(--faint)">为你做的可视化教程。每个滑块拖到底、每个按钮点几下,原理自己就摸出来了。</p>
 </div></footer>
 
 <script>
@@ -402,7 +402,7 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
   function upd(){const t=+$('fwd').value/100;$('fwdV').textContent=Math.round(t*100)+'%';
     renderNoised(ctx,clean,noise,t);
     $('fwdTxt').textContent = t<.05?'现在是干净的原图。AI 训练时会随机选一个噪声等级。'
-      : t<.4?'掺了一些噪声 —— 还看得出是夕阳。':t<.85?'噪声很重了,结构快没了。':'几乎是纯雪花点了 —— 这就是扩散的终点 / 生成的起点。';}
+      : t<.4?'掺了一些噪声,还看得出是夕阳。':t<.85?'噪声很重了,结构快没了。':'几乎是纯雪花点了,这就是扩散的终点 / 生成的起点。';}
   $('fwd').addEventListener('input',upd);upd();
 })();
 
@@ -429,7 +429,7 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
   function upd(msg){renderNoised(ctx,clean,noise,Math.max(0,t));drawDots();$('revTxt').textContent=msg;}
   function reset(){t=1;clean=getClean(w,h,3);noise=noiseField(w,h);upd('从纯噪声开始。点"去噪一步",看它一点点变清楚。');}
   $('revStep').addEventListener('click',()=>{t=Math.max(0,t-0.12);
-    upd(t<=0?'✅ 擦干净了!一张全新的图从噪声里显影出来。':'AI 猜出噪声 → 减掉一点 → 图更清楚了。继续点。');});
+    upd(t<=0?'擦干净了,一张全新的图从噪声里冒了出来。':'AI 猜出噪声 → 减掉一点 → 图更清楚了。继续点。');});
   $('revReset').addEventListener('click',reset);reset();
 })();
 
@@ -439,7 +439,7 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
   function upd(){const s=+$('steps').value;$('stepsV').textContent=s;
     const resid=0.5/Math.pow(s,0.8); // more steps -> less residual noise
     renderNoised(ctx,clean,noise,Math.min(.6,resid));
-    $('stepsTxt').textContent = s<=3?'步数太少 → 糊、噪点多。':s<12?'还行,细节在变清楚。':'步数多 → 很锐。但注意:夕阳还是夕阳,视角没变 —— 内容第一步就定了。';}
+    $('stepsTxt').textContent = s<=3?'步数太少 → 糊、噪点多。':s<12?'还行,细节在变清楚。':'步数多 → 很锐。但注意:夕阳还是夕阳,视角没变,内容第一步就定了。';}
   $('steps').addEventListener('input',upd);upd();
 })();
 
