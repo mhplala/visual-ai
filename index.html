@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>看得见的 AI:扩散模型 & 自回归模型</title>
+<style>
+:root{
+  --ink:#1a1a18; --muted:#6b6a65; --faint:#9a988f; --line:#e7e5df;
+  --paper:#fffefb; --canvas:#f7f6f1; --card:#fbfaf6;
+  --diff:#6b54d3; --diff-soft:#efeafd; --ar:#0f8a6a; --ar-soft:#e4f5ee;
+  --warn:#c9772a;
+  --r:14px; --r-s:10px;
+  --font:Inter,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:var(--font);
+  font-size:16px;line-height:1.75;-webkit-font-smoothing:antialiased}
+.wrap{max-width:860px;margin:0 auto;padding:0 20px}
+header{padding:54px 0 30px;text-align:center}
+header h1{font-size:30px;font-weight:680;margin:0 0 8px;letter-spacing:-.01em}
+header p{color:var(--muted);font-size:15px;margin:0}
+.toc{position:sticky;top:0;z-index:20;background:rgba(247,246,241,.86);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:8px}
+.toc .wrap{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;font-size:13px}
+.toc a{color:var(--muted);text-decoration:none;padding:5px 11px;border-radius:999px;border:1px solid transparent}
+.toc a:hover{color:var(--ink);background:var(--paper);border-color:var(--line)}
+section{padding:30px 0;border-top:1px solid var(--line)}
+.kicker{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+h2{font-size:24px;font-weight:660;margin:2px 0 6px;letter-spacing:-.01em}
+h3{font-size:18px;font-weight:620;margin:30px 0 4px}
+p{margin:10px 0}
+.lead{font-size:17px;color:#36352f}
+.demo{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px;margin:18px 0;box-shadow:0 10px 30px rgba(30,28,22,.04)}
+.demo h4{margin:0 0 4px;font-size:15px;font-weight:620;display:flex;align-items:center;gap:8px}
+.demo .hint{color:var(--muted);font-size:13.5px;margin:2px 0 14px}
+.row{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.col{flex:1;min-width:160px}
+canvas{border-radius:10px;display:block;background:#222;border:1px solid var(--line);image-rendering:pixelated;width:100%;max-width:260px}
+.ctrl{display:flex;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap}
+.ctrl label{font-size:13px;color:var(--muted);min-width:auto}
+input[type=range]{-webkit-appearance:none;appearance:none;height:5px;border-radius:5px;background:var(--line);outline:none;flex:1;min-width:120px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ink);cursor:pointer;border:3px solid var(--paper);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.val{font-variant-numeric:tabular-nums;font-weight:600;font-size:13.5px;min-width:42px;text-align:right}
+button.b{border:0;background:var(--ink);color:#fff;border-radius:9px;padding:9px 15px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+button.b:hover{filter:brightness(1.12)}button.b:active{transform:translateY(1px)}
+button.ghost{border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.pill.d{background:var(--diff-soft);color:var(--diff)}
+.pill.a{background:var(--ar-soft);color:var(--ar)}
+.anchor{background:var(--card);border-left:3px solid var(--warn);border-radius:0 8px 8px 0;
+  padding:11px 15px;margin:14px 0;font-size:14.5px;color:#46443d}
+.anchor b{color:var(--warn)}
+.tag{font-size:11px;color:var(--faint);font-family:ui-monospace,monospace}
+.bars{display:flex;flex-direction:column;gap:7px;margin-top:6px}
+.bar{display:flex;align-items:center;gap:9px;font-size:14px}
+.bar .lab{width:62px;text-align:right;color:var(--muted)}
+.bar .track{flex:1;height:20px;background:var(--canvas);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+.bar .fill{height:100%;background:var(--ar);border-radius:6px;transition:width .4s cubic-bezier(.2,.8,.2,1);min-width:2px}
+.bar .pct{width:42px;font-variant-numeric:tabular-nums;font-size:12.5px;color:var(--muted)}
+.bar.top .fill{background:var(--ar)}.bar .fill{background:#9fcfbf}
+.sentence{font-size:19px;line-height:1.9;background:var(--canvas);border-radius:10px;padding:12px 16px;min-height:54px;border:1px solid var(--line)}
+.sentence .new{color:var(--ar);font-weight:600;animation:pop .4s var(--ease,ease)}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1}}
+table.cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:14.5px}
+table.cmp th,table.cmp td{border:1px solid var(--line);padding:10px 13px;text-align:left;vertical-align:top}
+table.cmp th{background:var(--card);font-weight:600}
+table.cmp td.d{color:var(--diff)}table.cmp td.a{color:var(--ar)}
+.code{background:#1e1d1a;color:#e9e7df;border-radius:10px;padding:14px 16px;font-family:ui-monospace,monospace;
+  font-size:13px;line-height:1.7;overflow-x:auto;margin:12px 0}
+.code .c{color:#8a877d}.code .k{color:#c9a76a}.code .hl{color:#8fd0b6}
+details{margin:10px 0;border:1px solid var(--line);border-radius:9px;background:var(--card);padding:0 14px}
+details summary{cursor:pointer;padding:11px 0;font-size:13.5px;color:var(--muted);font-weight:600}
+details[open] summary{color:var(--ink)}
+details .body{padding:0 0 12px;font-size:14px;color:#46443d}
+.attn{display:grid;gap:3px;margin:10px 0}
+.cell{aspect-ratio:1;border-radius:4px;display:grid;place-items:center;font-size:11px;cursor:default}
+.steps-strip{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--diff);opacity:.5;transition:.3s}
+footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
+.route{display:flex;flex-direction:column;gap:8px;text-align:left;max-width:560px;margin:14px auto 0}
+.route div{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:11px 14px;font-size:14px}
+.route b{color:var(--ink)}
+.big-emoji{font-size:0}
+@media(max-width:560px){canvas{max-width:100%}}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>看得见的 AI</h1>
+  <p>扩散模型 &amp; 自回归模型 —— 全用图和动手实验讲清楚,不用公式</p>
+</div></header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#big">两种引擎</a>
+  <a href="#noise">加噪</a>
+  <a href="#guess">猜噪声</a>
+  <a href="#denoise">去噪生成</a>
+  <a href="#steps">步数</a>
+  <a href="#vae">VAE 压缩</a>
+  <a href="#guide">提示词强度</a>
+  <a href="#distill">蒸馏提速</a>
+  <a href="#next">下一个词</a>
+  <a href="#causal">因果注意力</a>
+  <a href="#world">世界模型</a>
+  <a href="#merge">两者融合</a>
+  <a href="#train">怎么训练</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="big">
+  <div class="kicker">总览</div>
+  <h2>两种"生成"的引擎</h2>
+  <p class="lead">AI 画图、写字、生成视频,背后基本就两种思路。先用一句话各抓住灵魂,后面再逐个拆开看。</p>
+  <div class="demo">
+    <div class="row">
+      <div class="col">
+        <h4><span class="pill d">扩散 Diffusion</span></h4>
+        <p style="margin:8px 0 0">把一张图<b>慢慢加噪</b>变成雪花点,再训练 AI 学会<b>反向把雪花点擦回成图</b>。<br>生成时:从一团随机雪花出发,反复"擦干净" → 出图。</p>
+        <p class="tag">并行精修整张图 · 迭代很多步</p>
+      </div>
+      <div class="col">
+        <h4><span class="pill a">自回归 Autoregressive</span></h4>
+        <p style="margin:8px 0 0">把内容拆成一串,AI 学会<b>看着前面、猜下一个</b>。<br>生成时:猜一个 → 接上去 → 再猜下一个,像打字接龙。</p>
+        <p class="tag">串行逐个生成 · 一步一个</p>
+      </div>
+    </div>
+    <p class="hint" style="margin-top:14px">👇 下面每一节,左边一句话原理,右边一个你能<b>亲手拖/点</b>的小实验。</p>
+  </div>
+</section>
+
+<section id="noise">
+  <div class="kicker">扩散 · 第 1 步</div>
+  <h2>加噪:把图变成雪花点</h2>
+  <p class="lead">扩散模型的起点很反直觉:<b>先学会破坏</b>。我们故意往一张干净图里一点点掺随机噪声,直到它变成纯雪花点。拖下面的滑块,亲眼看这个过程。</p>
+  <div class="demo">
+    <h4>🌀 实验:噪声滑块</h4>
+    <div class="hint">从左拖到右 = 时间 t 从 0(干净)走到 100(纯噪声)。这就是扩散的"前向过程"。</div>
+    <div class="row">
+      <canvas id="cvFwd" width="200" height="160"></canvas>
+      <div class="col">
+        <div class="ctrl"><label>噪声 t</label><input type="range" id="fwd" min="0" max="100" value="0"><span class="val" id="fwdV">0%</span></div>
+        <p id="fwdTxt" style="font-size:14px;color:var(--muted);margin-top:10px">现在是干净的原图。AI 训练时会随机选一个噪声等级。</p>
+      </div>
+    </div>
+  </div>
+  <div class="anchor">你调过的 <b>noise_scale=0.8</b> 就是"掺多少噪声"。v2v 重绘时掺 80% 噪声 → 保留一点原视频结构,其余让模型自由发挥。</div>
+</section>
+
+<section id="guess">
+  <div class="kicker">扩散 · 第 2 步</div>
+  <h2>核心:让 AI "猜出掺了多少雪花"</h2>
+  <p class="lead">整个扩散模型,训练时<b>只干一件事</b>:给它一张掺了噪声的图,让它<b>猜出当初掺进去的那团噪声长什么样</b>。猜对了,减掉,就还原了。就这么简单——没有别的目标。</p>
+  <div class="demo">
+    <h4>🔍 看一眼这个"猜噪声"的回合</h4>
+    <div class="row" style="align-items:flex-start">
+      <div style="text-align:center"><canvas id="gNoisy" width="150" height="120"></canvas><div class="tag" style="margin-top:5px">① 带噪的图</div></div>
+      <div style="font-size:24px;color:var(--faint);align-self:center">→</div>
+      <div style="text-align:center"><canvas id="gNoise" width="150" height="120"></canvas><div class="tag" style="margin-top:5px">② AI 猜的噪声</div></div>
+      <div style="font-size:24px;color:var(--faint);align-self:center">→</div>
+      <div style="text-align:center"><canvas id="gClean" width="150" height="120"></canvas><div class="tag" style="margin-top:5px">③ 减掉 = 还原</div></div>
+    </div>
+    <button class="b" id="gBtn" style="margin-top:14px">▶︎ 换一张再猜一次</button>
+    <p class="hint" style="margin-top:10px">训练 = 把"猜的噪声"和"真噪声"对比,差越小越好(这就是它唯一的"考试")。重复几百万次,它就成了去噪高手。</p>
+  </div>
+  <details><summary>幕后那条公式(可选,不看也行)</summary><div class="body">
+    带噪图 = √a×原图 + √(1−a)×噪声。AI 学的是猜出那个"噪声"。损失 = (猜的噪声 − 真噪声)²。看不懂没关系,上面的图就是它的全部意思。</div></details>
+</section>
+
+<section id="denoise">
+  <div class="kicker">扩散 · 第 3 步</div>
+  <h2>生成:从雪花点里"擦"出一张图</h2>
+  <p class="lead">既然 AI 会猜噪声,那生成就反过来:<b>从一团纯雪花出发</b>,猜出噪声 → 擦掉一点 → 图清楚一点 → 再猜再擦……反复几十次,一张全新的图就"显影"出来了。点按钮一步步看。</p>
+  <div class="demo">
+    <h4>✨ 实验:一步步去噪</h4>
+    <div class="row">
+      <canvas id="cvRev" width="200" height="160"></canvas>
+      <div class="col">
+        <div class="ctrl">
+          <button class="b" id="revStep">去噪一步 ▶︎</button>
+          <button class="b ghost" id="revReset">重置成雪花</button>
+        </div>
+        <p id="revTxt" style="font-size:14px;color:var(--muted);margin-top:12px">从纯噪声开始。点"去噪一步",看它一点点变清楚。</p>
+        <div class="steps-strip" id="revDots"></div>
+      </div>
+    </div>
+  </div>
+  <div class="anchor">这就是你看到的"画面在生成中…":模型正在从噪声里一步步擦出每一帧。<b>UniPC / DDIM</b> 这些采样器,就是"怎么擦得又快又好"的不同擦法。</div>
+</section>
+
+<section id="steps">
+  <div class="kicker">扩散 · 关键直觉</div>
+  <h2>步数:擦几次?(以及为什么加步数改不了视角)</h2>
+  <p class="lead">擦的次数 = 步数。擦得越多越精细越锐;但<b>"画的是什么、什么视角"在第一两步就定下来了</b>,后面只是把它擦清楚。拖滑块感受一下。</p>
+  <div class="demo">
+    <h4>🎚 实验:总步数 1 → 50</h4>
+    <div class="row">
+      <canvas id="cvSteps" width="200" height="160"></canvas>
+      <div class="col">
+        <div class="ctrl"><label>步数</label><input type="range" id="steps" min="1" max="50" value="4"><span class="val" id="stepsV">4</span></div>
+        <p id="stepsTxt" style="font-size:14px;color:var(--muted);margin-top:10px"></p>
+      </div>
+    </div>
+  </div>
+  <div class="anchor">还记得我们那次结论吗——<b>加步数没法把第三人称变成第一人称</b>。原因就在这:视角是"擦"的第一步就定型的低频结构,加步数只让它更清楚,不改它是什么。</div>
+</section>
+
+<section id="vae">
+  <div class="kicker">扩散 · 提速核心</div>
+  <h2>VAE:不在大图上擦,在"缩略图"上擦</h2>
+  <p class="lead">在 1024×1024 的大图上反复擦太贵了。聪明的做法:先用一个叫 <b>VAE</b> 的压缩器把图压成一张很小的"语义缩略图"(latent),<b>在小图上做完整个扩散</b>,最后再解压回大图。省几十倍算力。</p>
+  <div class="demo">
+    <h4>🗜 它的流水线</h4>
+    <div class="row" style="justify-content:center;text-align:center;gap:10px">
+      <div><canvas id="vaeBig1" width="120" height="96"></canvas><div class="tag">大图</div></div>
+      <div style="color:var(--diff);font-weight:600">压缩→</div>
+      <div><div id="vaeLatent" style="width:60px;height:48px;margin:auto;border-radius:6px;border:1px solid var(--line)"></div><div class="tag">小 latent<br>(在这里扩散)</div></div>
+      <div style="color:var(--diff);font-weight:600">解压→</div>
+      <div><canvas id="vaeBig2" width="120" height="96"></canvas><div class="tag">还原大图</div></div>
+    </div>
+  </div>
+  <div class="anchor">你手写的 <b>TAESD</b>、Wan2.2 的 VAE、Cosmos 的 MG-LightVAE —— 全是这个"压缩/解压器"。我们一整晚换更快的 VAE,就是在给这一步提速。</div>
+</section>
+
+<section id="guide">
+  <div class="kicker">扩散 · 你调过的旋钮</div>
+  <h2>提示词强度(guidance):多听话?</h2>
+  <p class="lead">怎么让擦出来的图<b>贴合你的文字</b>?办法是让模型同时算"听提示"和"不听提示"两版,然后朝"听提示"的方向<b>使劲推</b>。推多少 = guidance。太小 → 它乱画;太大 → 过曝失真。拖一下。</p>
+  <div class="demo">
+    <h4>🎛 实验:guidance 0 → 15</h4>
+    <div class="row">
+      <canvas id="cvGuide" width="200" height="160"></canvas>
+      <div class="col">
+        <div class="ctrl"><label>guidance</label><input type="range" id="guide" min="0" max="15" step="0.5" value="3"><span class="val" id="guideV">3.0</span></div>
+        <p id="guideTxt" style="font-size:14px;color:var(--muted);margin-top:10px"></p>
+      </div>
+    </div>
+  </div>
+  <div class="anchor">这就是你在 worker 里设的 <b>guidance_scale=3.0 / 5.0</b>。Playground 喜欢 3,Wan 喜欢 5——每个模型的"最佳听话度"不同。</div>
+</section>
+
+<section id="distill">
+  <div class="kicker">扩散 · 实时的秘密</div>
+  <h2>蒸馏:把 35 步的老师压成 1 步的学生</h2>
+  <p class="lead">原始扩散要擦几十步,慢。<b>蒸馏</b>就是训练一个"学生":让它<b>一步</b>就跳到老师擦几十步的结果。这就是 SDXL-Turbo、你的 1 步 Wan 能"实时"的原因。</p>
+  <div class="demo">
+    <h4>⚡️ 老师 vs 学生</h4>
+    <div style="margin:6px 0"><span class="tag">老师(慢):</span><div class="steps-strip" id="teacherDots"></div></div>
+    <div style="margin:14px 0 4px"><span class="tag">学生(快):</span>
+      <div class="steps-strip"><span class="dot" style="width:26px;height:26px;opacity:1"></span><span style="color:var(--diff);font-size:13px;margin-left:6px">1 步直达 ⚡️</span></div></div>
+    <button class="b" id="distillBtn" style="margin-top:14px">▶︎ 演示</button>
+  </div>
+  <div class="anchor">你跑的 <b>wan_causal_dmd_v2v</b>,名字里的 <b>DMD = Distribution Matching Distillation</b> 就是这种蒸馏:让学生的"出图分布"去对齐老师,所以能 1-2 步出帧。</div>
+</section>
+
+<section id="next">
+  <div class="kicker">自回归 · 核心</div>
+  <h2>下一个词:打字接龙</h2>
+  <p class="lead">自回归(就是 Gemini、ChatGPT 那一类)的核心动作只有一个:<b>看着前面所有内容,给每个可能的"下一个词"打分,挑一个,接上去</b>。然后把新句子再喂回去,继续猜下一个。点按钮玩玩。</p>
+  <div class="demo">
+    <h4>⌨️ 实验:让它一个词一个词往下写</h4>
+    <div class="sentence" id="sent">夜色中,你握紧了</div>
+    <button class="b" id="nextBtn" style="margin-top:12px">预测下一个词 ▶︎</button>
+    <button class="b ghost" id="nextReset" style="margin-top:12px">重来</button>
+    <p class="hint" style="margin-top:12px">每次它会列出几个候选词 + 概率(下面的条),然后挑一个接上。这就是"生成"。</p>
+    <div class="bars" id="cands"></div>
+  </div>
+  <div class="anchor">你的剧情引擎 <b>Gemini</b> 就是这样逐词写出旁白和选项的。"temperature(随机性)"越高,它越敢挑概率低的词 → 越有创意但越不稳。</div>
+  <details><summary>幕后那条"公式"(其实就是接龙)</summary><div class="body">它学的是:在海量文本上,反复"遮住下一个词让它猜",猜错就罚。考试题就是"下一个词是什么"。没有更玄的。</div></details>
+</section>
+
+<section id="causal">
+  <div class="kicker">自回归 · 为什么只看左边</div>
+  <h2>因果注意力:只能看过去,不能偷看未来</h2>
+  <p class="lead">接龙时,第 3 个词只能参考第 1、2 个,<b>不能看后面还没生成的</b>。模型内部用一个"遮罩"强制做到这点。把鼠标放到某一行,看它"能看到谁"。</p>
+  <div class="demo">
+    <h4>👁 实验:每个词能看到谁(把鼠标移到左边的字上)</h4>
+    <div id="attnGrid" style="max-width:380px"></div>
+    <p class="hint" style="margin-top:10px"><span style="color:var(--ar)">■</span> 能看到(过去 + 自己) · <span style="color:var(--faint)">■</span> 被挡住(未来)</p>
+  </div>
+  <div class="anchor">为了不每次重算前面,模型把过去的计算<b>存起来复用</b> = <b>KV cache</b>。你见过的 StreamDiffusionV2 "ring-buffer KV cache"、实时视频的流式生成,全靠它。</div>
+</section>
+
+<section id="world">
+  <div class="kicker">自回归 · 你的 Matrix-Game</div>
+  <h2>世界模型:动作 + 当前帧 → 下一帧</h2>
+  <p class="lead">把"下一个词"换成"下一帧",再加上你的<b>操作(按键)</b>当条件,就成了<b>可玩的世界模型</b>。你给方向,它生成你"走过去"后看到的下一帧。这正是你 9877 上跑的 <b>Matrix-Game-3.0</b>。</p>
+  <div class="demo">
+    <h4>🎮 实验:按方向键,生成下一帧</h4>
+    <div class="row">
+      <canvas id="cvWorld" width="200" height="150"></canvas>
+      <div class="col">
+        <div class="ctrl">
+          <button class="b ghost" id="wL">◀ 左</button>
+          <button class="b" id="wF">前进 ▲</button>
+          <button class="b ghost" id="wR">右 ▶</button>
+        </div>
+        <p style="font-size:14px;color:var(--muted);margin-top:10px">每按一下 = 模型根据"上一帧 + 你的动作"自回归地画出下一帧。一帧接一帧,你就"走"在它生成的世界里。</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="merge">
+  <div class="kicker">前沿 · 你站的位置</div>
+  <h2>两者的融合(你跑的视频模型全在这)</h2>
+  <p class="lead">视频既要"帧内是好画面"(扩散擅长),又要"帧间连贯像在动"(自回归擅长)。所以最前沿的视频模型<b>把两者缝在一起</b>:</p>
+  <table class="cmp">
+    <tr><th></th><th>扩散 Diffusion</th><th>自回归 Autoregressive</th></tr>
+    <tr><td>天生擅长</td><td class="d">连续的图像/画面</td><td class="a">有顺序的序列/文字</td></tr>
+    <tr><td>生成方式</td><td class="d">并行精修、擦很多步</td><td class="a">串行逐个、一步一个</td></tr>
+    <tr><td>弱点</td><td class="d">帧间一致性难</td><td class="a">会越生成越漂移</td></tr>
+  </table>
+  <div class="demo">
+    <h4>🎬 融合体:帧间自回归 + 帧内扩散</h4>
+    <div class="hint">这就是 CausVid / StreamDiffusionV2 / Cosmos 的做法。点一下看它怎么一帧帧"擦"出来。</div>
+    <div id="mergeStrip" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:8px"></div>
+    <button class="b" id="mergeBtn" style="margin-top:14px">▶︎ 生成一段(逐帧)</button>
+  </div>
+  <div class="anchor"><b>Cosmos</b> 你下载测过的那个,用的是 <b>MoT(混合 Transformer)</b>:一个自回归塔管文字理解 + 一个扩散塔管画面。两种引擎合体。</div>
+</section>
+
+<section id="train">
+  <div class="kicker">你想成为的人</div>
+  <h2>"训练"到底在训什么?其实就 5 行</h2>
+  <p class="lead">最让人惊讶的事:两种模型的"训练目标"各自只有几行。剩下全是<b>规模、架构、数据</b>。看这两段——绿色那行就是它"考试的题目"。</p>
+  <h3><span class="pill d">扩散</span> 训练循环</h3>
+  <div class="code"><span class="c"># 拿一张图,随机掺噪声,让模型猜噪声</span><br>
+t   = <span class="k">随机</span>(1, T)<br>
+噪声 = <span class="k">随机雪花</span>()<br>
+带噪图 = 加噪(原图, t, 噪声)<br>
+<span class="hl">损失 = (模型猜的噪声 − 真噪声)²  # ← 全部目标</span><br>
+反向传播(); 更新()</div>
+  <h3><span class="pill a">自回归</span> 训练循环</h3>
+  <div class="code"><span class="c"># 拿一段文字,遮住下一个词,让模型猜</span><br>
+预测 = 模型(前面的词)<br>
+<span class="hl">损失 = 猜错下一个词的程度  # ← 全部目标</span><br>
+反向传播(); 更新()</div>
+  <div class="anchor">你已经有 <b>B200</b> 了——这是别人没有的条件。<b>真正"懂"的最快方式,是亲手训一个小的</b>:几分钟训一个小扩散模型,看它从雪花里长出图;或跑 nanoGPT,看一个小 GPT 学会说人话。要不要下一课我直接在你卡上带你训?</div>
+</section>
+
+</main>
+
+<footer><div class="wrap">
+  <p style="font-weight:600;color:var(--ink);font-size:15px">读论文的顺序(别跳)</p>
+  <div class="route">
+    <div><b>① 地基</b> · Attention Is All You Need → DDPM → nanoGPT(代码)</div>
+    <div><b>② 会用</b> · Stable Diffusion(latent)→ Classifier-Free Guidance → DiT</div>
+    <div><b>③ 前沿</b> · Flow Matching → Consistency Models → DMD 蒸馏</div>
+    <div><b>④ 你的主场</b> · VAR → Genie → CausVid → Self-Forcing → Cosmos</div>
+  </div>
+  <p style="margin-top:24px;color:var(--faint)">看得见的 AI · 为你做的可视化教程 · 拖一拖、点一点,每个原理都能自己摸出来</p>
+</div></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+// ---------- shared: draw a simple sunset "scene" as x0 ----------
+function drawScene(ctx,w,h,seed){
+  seed=seed||0;
+  const sky=ctx.createLinearGradient(0,0,0,h);
+  const hue=(seed*47)%40;
+  sky.addColorStop(0,`hsl(${250-hue},45%,28%)`);
+  sky.addColorStop(.55,`hsl(${20+hue},80%,58%)`);
+  sky.addColorStop(1,`hsl(${35+hue},85%,68%)`);
+  ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+  // sun
+  const sx=w*(.3+0.4*((seed*0.13)%1)), sy=h*.5;
+  const sun=ctx.createRadialGradient(sx,sy,2,sx,sy,h*.28);
+  sun.addColorStop(0,'#fff7d6');sun.addColorStop(.5,'#ffd34d');sun.addColorStop(1,'rgba(255,180,60,0)');
+  ctx.fillStyle=sun;ctx.beginPath();ctx.arc(sx,sy,h*.28,0,7);ctx.fill();
+  ctx.fillStyle='#ffe9a8';ctx.beginPath();ctx.arc(sx,sy,h*.1,0,7);ctx.fill();
+  // ground / hills
+  ctx.fillStyle=`hsl(${150+hue},25%,${18}%)`;
+  ctx.beginPath();ctx.moveTo(0,h*.78);
+  ctx.quadraticCurveTo(w*.3,h*.68,w*.55,h*.76);
+  ctx.quadraticCurveTo(w*.8,h*.84,w,h*.74);ctx.lineTo(w,h);ctx.lineTo(0,h);ctx.fill();
+  ctx.fillStyle='#14110f';ctx.fillRect(0,h*.9,w,h*.1);
+}
+function getClean(w,h,seed){const c=document.createElement('canvas');c.width=w;c.height=h;
+  drawScene(c.getContext('2d'),w,h,seed);return c.getContext('2d').getImageData(0,0,w,h);}
+// stable noise field
+function noiseField(w,h){const n=new Float32Array(w*h*3);for(let i=0;i<n.length;i++)n[i]=Math.random()*255;return n;}
+function renderNoised(ctx,clean,noise,t){ // t in [0,1]
+  const w=ctx.canvas.width,h=ctx.canvas.height;
+  const abar=1-t, a=Math.sqrt(abar), b=Math.sqrt(1-abar);
+  const out=ctx.createImageData(w,h),d=out.data,c=clean.data;
+  for(let p=0,j=0;p<d.length;p+=4,j+=3){
+    d[p]  =a*c[p]  +b*noise[j];
+    d[p+1]=a*c[p+1]+b*noise[j+1];
+    d[p+2]=a*c[p+2]+b*noise[j+2];
+    d[p+3]=255;
+  }
+  ctx.putImageData(out,0,0);
+}
+
+// ---------- 1. forward noise ----------
+(()=>{const ctx=$('cvFwd').getContext('2d'),w=200,h=160;
+  const clean=getClean(w,h,1),noise=noiseField(w,h);
+  function upd(){const t=+$('fwd').value/100;$('fwdV').textContent=Math.round(t*100)+'%';
+    renderNoised(ctx,clean,noise,t);
+    $('fwdTxt').textContent = t<.05?'现在是干净的原图。AI 训练时会随机选一个噪声等级。'
+      : t<.4?'掺了一些噪声 —— 还看得出是夕阳。':t<.85?'噪声很重了,结构快没了。':'几乎是纯雪花点了 —— 这就是扩散的终点 / 生成的起点。';}
+  $('fwd').addEventListener('input',upd);upd();
+})();
+
+// ---------- 2. guess noise ----------
+(()=>{let seed=2;
+  function run(){const w=150,h=120;
+    const clean=getClean(w,h,seed),noise=noiseField(w,h),t=.55;
+    renderNoised($('gNoisy').getContext('2d'),clean,noise,t);
+    // "predicted noise" = the noise field visualized
+    const nctx=$('gNoise').getContext('2d'),img=nctx.createImageData(w,h);
+    for(let p=0,j=0;p<img.data.length;p+=4,j+=3){img.data[p]=noise[j];img.data[p+1]=noise[j+1];img.data[p+2]=noise[j+2];img.data[p+3]=255;}
+    nctx.putImageData(img,0,0);
+    drawScene($('gClean').getContext('2d'),w,h,seed);
+  }
+  $('gBtn').addEventListener('click',()=>{seed++;run();});run();
+})();
+
+// ---------- 3. denoise stepping ----------
+(()=>{const ctx=$('cvRev').getContext('2d'),w=200,h=160;
+  let clean=getClean(w,h,3),noise=noiseField(w,h),t=1;
+  const dots=$('revDots');
+  function drawDots(){dots.innerHTML='';const total=10,done=Math.round((1-t)*total);
+    for(let i=0;i<total;i++){const s=document.createElement('span');s.className='dot';s.style.opacity=i<done?1:.3;dots.appendChild(s);}}
+  function upd(msg){renderNoised(ctx,clean,noise,Math.max(0,t));drawDots();$('revTxt').textContent=msg;}
+  function reset(){t=1;clean=getClean(w,h,3);noise=noiseField(w,h);upd('从纯噪声开始。点"去噪一步",看它一点点变清楚。');}
+  $('revStep').addEventListener('click',()=>{t=Math.max(0,t-0.12);
+    upd(t<=0?'✅ 擦干净了!一张全新的图从噪声里显影出来。':'AI 猜出噪声 → 减掉一点 → 图更清楚了。继续点。');});
+  $('revReset').addEventListener('click',reset);reset();
+})();
+
+// ---------- 4. steps ----------
+(()=>{const ctx=$('cvSteps').getContext('2d'),w=200,h=160;
+  const clean=getClean(w,h,5),noise=noiseField(w,h);
+  function upd(){const s=+$('steps').value;$('stepsV').textContent=s;
+    const resid=0.5/Math.pow(s,0.8); // more steps -> less residual noise
+    renderNoised(ctx,clean,noise,Math.min(.6,resid));
+    $('stepsTxt').textContent = s<=3?'步数太少 → 糊、噪点多。':s<12?'还行,细节在变清楚。':'步数多 → 很锐。但注意:夕阳还是夕阳,视角没变 —— 内容第一步就定了。';}
+  $('steps').addEventListener('input',upd);upd();
+})();
+
+// ---------- 5. VAE ----------
+(()=>{const w=120,h=96;drawScene($('vaeBig1').getContext('2d'),w,h,7);drawScene($('vaeBig2').getContext('2d'),w,h,7);
+  // latent = tiny pixelated grid
+  const L=$('vaeLatent');L.innerHTML='';L.style.display='grid';L.style.gridTemplateColumns='repeat(6,1fr)';L.style.gap='1px';L.style.overflow='hidden';
+  for(let i=0;i<30;i++){const c=document.createElement('div');c.style.background=`hsl(${(i*37)%360},45%,55%)`;L.appendChild(c);}
+})();
+
+// ---------- 6. guidance ----------
+(()=>{const ctx=$('cvGuide').getContext('2d'),w=200,h=160;const clean=getClean(w,h,9),noise=noiseField(w,h);
+  function upd(){const g=+$('guide').value;$('guideV').textContent=g.toFixed(1);
+    // proxy: low g -> noisy/off; mid -> clean; high -> oversaturated/contrast
+    renderNoised(ctx,clean,noise, g<2?0.45-g*0.18:0.05);
+    if(g>=8){ // oversaturate
+      const im=ctx.getImageData(0,0,w,h),d=im.data;const k=1+(g-8)*0.25;
+      for(let p=0;p<d.length;p+=4){for(let c=0;c<3;c++){let v=(d[p+c]-128)*k+128;d[p+c]=Math.max(0,Math.min(255,v));}}
+      ctx.putImageData(im,0,0);}
+    $('guideTxt').textContent = g<2?'太低 → 模型不听提示词,乱画、发糊。':g<=6?'刚好 → 既贴合提示又自然(大多数模型的甜区)。':'太高 → 过曝、颜色失真、画面"用力过猛"。';}
+  $('guide').addEventListener('input',upd);upd();
+})();
+
+// ---------- 7. distillation ----------
+(()=>{const t=$('teacherDots');function build(){t.innerHTML='';for(let i=0;i<35;i++){const s=document.createElement('span');s.className='dot';s.style.width='9px';s.style.height='9px';t.appendChild(s);}}
+  build();
+  $('distillBtn').addEventListener('click',()=>{const dots=[...t.children];dots.forEach((d,i)=>{d.style.opacity=.3;setTimeout(()=>{d.style.opacity=1;},i*45);});});
+})();
+
+// ---------- 8. next token ----------
+(()=>{const chains={
+  '夜色中,你握紧了':[['手枪',55],['拳头',20],['门把手',15],['绳索',10]],
+  '夜色中,你握紧了手枪':[[',',45],['对准',30],['冲',15],['犹豫',10]],
+  '夜色中,你握紧了手枪,':[['推开',40],['扣动',28],['屏住',22],['转身',10]],
+  '夜色中,你握紧了手枪,推开':[['了',60],['那扇',25],['门',15]],
+  '夜色中,你握紧了手枪,推开了':[['那扇',50],['门',35],['铁门',15]],
+};
+  const def=[['门',45],['黑暗',25],['未知',20],['深渊',10]];
+  function render(cands){const box=$('cands');box.innerHTML='';
+    cands.forEach(([w,p],i)=>{const r=document.createElement('div');r.className='bar'+(i===0?' top':'');
+      r.innerHTML=`<span class="lab">${w}</span><span class="track"><span class="fill" style="width:0%"></span></span><span class="pct">${p}%</span>`;
+      box.appendChild(r);requestAnimationFrame(()=>r.querySelector('.fill').style.width=p+'%');});}
+  function step(){const cur=$('sent').textContent;const cands=chains[cur]||def;render(cands);
+    setTimeout(()=>{const pick=cands[0][0];const span=document.createElement('span');span.className='new';span.textContent=pick;
+      $('sent').appendChild(span);},650);}
+  $('nextBtn').addEventListener('click',step);
+  $('nextReset').addEventListener('click',()=>{$('sent').textContent='夜色中,你握紧了';$('cands').innerHTML='';});
+})();
+
+// ---------- 9. causal attention ----------
+(()=>{const words=['夜','色','中','你','握','紧'];const n=words.length;const g=$('attnGrid');
+  g.style.display='grid';g.style.gridTemplateColumns=`46px repeat(${n},1fr)`;g.style.gap='3px';
+  g.appendChild(cell('',''));words.forEach(w=>g.appendChild(cell(w,'head')));
+  for(let r=0;r<n;r++){g.appendChild(cell(words[r],'rowh',r));
+    for(let c=0;c<n;c++){const can=c<=r;const e=cell('',can?'on':'off');e.dataset.row=r;g.appendChild(e);}}
+  function cell(t,cls,r){const d=document.createElement('div');d.className='cell';d.textContent=t;
+    if(cls==='head'||cls==='rowh'){d.style.background='transparent';d.style.fontWeight='600';d.style.color='#46443d';d.style.fontSize='14px';if(cls==='rowh'){d.dataset.rowh=r;d.style.cursor='pointer';}}
+    else if(cls==='on'){d.style.background='var(--ar-soft)';d.style.border='1px solid #bfe6d7';}
+    else if(cls==='off'){d.style.background='var(--canvas)';}
+    return d;}
+  g.addEventListener('mouseover',e=>{const rh=e.target.dataset.rowh;if(rh===undefined)return;
+    [...g.querySelectorAll('.cell')].forEach(c=>{if(c.dataset.row!==undefined)c.style.outline='none';});
+    [...g.querySelectorAll(`.cell`)].forEach(c=>{if(c.dataset.row==rh)c.style.outline='2px solid var(--ar)';});});
+})();
+
+// ---------- 10. world model ----------
+(()=>{const ctx=$('cvWorld').getContext('2d'),w=200,h=150;let camX=0.5,depth=0.4;
+  function draw(){ctx.fillStyle='#10131a';ctx.fillRect(0,0,w,h);
+    // floor grid (perspective) reacting to camX/depth
+    ctx.strokeStyle='rgba(120,160,255,.35)';ctx.lineWidth=1;
+    const vx=w*(1-camX);
+    for(let i=-6;i<=6;i++){ctx.beginPath();ctx.moveTo(w/2+i*16,h);ctx.lineTo(vx+i*4,h*.45);ctx.stroke();}
+    for(let j=1;j<7;j++){const y=h*.45+(h*.55)*(j/7)*(j/7);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+    // a glowing door ahead, size = depth
+    const ds=20+depth*70;ctx.fillStyle='#ff7a3c';ctx.shadowColor='#ff7a3c';ctx.shadowBlur=20;
+    ctx.fillRect(vx-ds/4,h*.45-ds*.2,ds/2,ds*.7);ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,255,255,.85)';ctx.font='11px sans-serif';ctx.fillText('第 '+frame+' 帧 · 自回归生成',8,16);}
+  let frame=0;
+  $('wF').addEventListener('click',()=>{depth=Math.min(1,depth+0.18);frame++;draw();});
+  $('wL').addEventListener('click',()=>{camX=Math.max(.2,camX-0.12);frame++;draw();});
+  $('wR').addEventListener('click',()=>{camX=Math.min(.8,camX+0.12);frame++;draw();});
+  draw();
+})();
+
+// ---------- 11. merge: causal video diffusion ----------
+(()=>{const strip=$('mergeStrip');
+  $('mergeBtn').addEventListener('click',()=>{strip.innerHTML='';
+    for(let f=0;f<4;f++){const c=document.createElement('canvas');c.width=90;c.height=64;c.style.borderRadius='8px';c.style.border='1px solid var(--line)';
+      const wrap=document.createElement('div');wrap.style.textAlign='center';
+      wrap.appendChild(c);const lab=document.createElement('div');lab.className='tag';lab.textContent='帧 '+(f+1);wrap.appendChild(lab);strip.appendChild(wrap);
+      const ctx=c.getContext('2d'),clean=getClean(90,64,20+f),noise=noiseField(90,64);
+      // each frame denoises over time (diffusion within), staggered (AR across)
+      let t=1;const delay=f*500;
+      setTimeout(()=>{const iv=setInterval(()=>{t-=0.18;renderNoised(ctx,clean,noise,Math.max(0,t));if(t<=0)clearInterval(iv);},90);},delay);
+    }});
+})();
+</script>
+</body>
+</html>
