@@ -107,6 +107,15 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <a href="#world">世界模型</a>
   <a href="#merge">两者融合</a>
   <a href="#train">怎么训练</a>
+  <span style="color:var(--faint);align-self:center">·第二章·</span>
+  <a href="#embed">向量</a>
+  <a href="#attn2">注意力</a>
+  <a href="#flow">Flow</a>
+  <a href="#dmd">DMD</a>
+  <a href="#moe">MoE</a>
+  <a href="#quant">量化</a>
+  <a href="#scale">Scaling</a>
+  <a href="#cost">N²</a>
 </div></nav>
 
 <main class="wrap">
@@ -342,6 +351,114 @@ t   = <span class="k">随机</span>(1, T)<br>
   <div class="anchor">你已经有 <b>B200</b> 了,这是别人没有的条件。<b>真正"懂"的最快方式,是亲手训一个小的</b>:几分钟训一个小扩散模型,看它从雪花里长出图;或跑 nanoGPT,看一个小 GPT 学会说人话。要不要下一课我直接在你卡上带你训?</div>
 </section>
 
+<section id="ch2" style="border-top:2px solid var(--ink);text-align:center;padding-top:42px">
+  <div class="kicker">第二章</div>
+  <h2 style="font-size:28px">进阶与前沿</h2>
+  <p class="lead" style="max-width:620px;margin:6px auto 0">第一章讲清了两台引擎怎么转。这一章往里走:注意力到底在算什么、最新的模型怎么又快又大、"训练"在工业界是怎么玩的。还是老规矩,每个都配一个能上手的图。</p>
+</section>
+
+<section id="embed">
+  <div class="kicker">前沿 · 地基</div>
+  <h2>向量:AI 眼里的"意思"</h2>
+  <p class="lead">AI 不认字,也不认像素。它把每个词、每一小块画面,都变成一串数字,也就是空间里的一个点。规律很简单:意思相近的,点就离得近。点下面任意一个词,看跟它最近的是谁。</p>
+  <div class="demo">
+    <h4>实验:词的地图(点一个词)</h4>
+    <div class="hint">这是压扁成二维的"意思地图"。真实模型里是几千维,但道理一样:近就是像。</div>
+    <div id="embedMap" style="position:relative;height:300px;background:var(--canvas);border-radius:10px;border:1px solid var(--line);overflow:hidden"></div>
+  </div>
+  <div class="anchor">这串数字叫 embedding(嵌入)。文字进模型的第一步,就是查表把每个词换成它的向量。后面的注意力、生成,全在这个"意思空间"里发生。</div>
+</section>
+
+<section id="attn2">
+  <div class="kicker">前沿 · 核心</div>
+  <h2>注意力:每个词去"问"别的词</h2>
+  <p class="lead">这是 Transformer 最核心、也最难的一块。一句话里,每个词都想知道"我该重点参考谁"。做法像查字典:每个词发出一个问题(Q),每个词举着一个标签(K),问题和标签越对得上,就越关注那个词的内容(V),最后按关注度把内容混在一起。点一个词,看它在问谁。</p>
+  <div class="demo">
+    <h4>实验:点一个词,看它的注意力落在哪</h4>
+    <div id="attnSent" style="display:flex;gap:8px;flex-wrap:wrap;font-size:18px;margin:8px 0 14px"></div>
+    <p class="hint" id="attnTip">点上面任意一个词。颜色越深,代表它越关注那个词。</p>
+  </div>
+  <div class="anchor">"它""他"这种词最能看出门道:模型得回头找到它指代的名词。注意力就是干这个的。而且它在每一层、每个词上,同时算几十组(多头),这就是 Transformer 读懂上下文的底层机制。</div>
+</section>
+
+<section id="flow">
+  <div class="kicker">前沿 · 更快的扩散</div>
+  <h2>Flow Matching:把弯路走直</h2>
+  <p class="lead">第一章的扩散,从噪声到图走的是一条弯弯绕绕的路,要擦几十步。新一代模型(Wan2.2、FLUX、SD3)换了思路:直接训练它走一条直线,从噪声直奔目标,几步就到。点一下对比两条路。</p>
+  <div class="demo">
+    <h4>实验:弯路(扩散)对比直路(flow matching)</h4>
+    <canvas id="cvFlow" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><button class="b" id="flowGo">放一个点跑一遍</button><button class="b ghost" id="flowToggle">切换 弯路/直路</button></div>
+    <p class="hint" id="flowTip">左边是噪声,右边是目标。看那个点怎么从左走到右。</p>
+  </div>
+  <div class="anchor">你跑的 Wan2.2 就是 flow matching 的。路走得越直,要的步数越少,这也是它能往实时方向做的原因之一。</div>
+</section>
+
+<section id="dmd">
+  <div class="kicker">前沿 · 把成本省下来</div>
+  <h2>DMD:一步追上三十五步</h2>
+  <p class="lead">第一章说蒸馏能把"老师几十步"压成"学生一步"。但学生一步出的图,分布往往是歪的。DMD 的办法是请一个"裁判":不停指出学生哪里画得不像老师,学生照着改,直到一步就能出和老师一样好的图。看这两堆点怎么被推到一起。</p>
+  <div class="demo">
+    <h4>实验:把学生的分布推向老师</h4>
+    <canvas id="cvDmd" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><button class="b" id="dmdGo">训练学生(推一推)</button><button class="b ghost" id="dmdReset">重置</button></div>
+    <p class="hint">紫点是老师的出图分布,绿点是学生的。裁判每轮把绿点往紫点推一点。</p>
+  </div>
+  <div class="anchor">你跑的 wan_causal_dmd_v2v 就是这么训的。DMD 全称 Distribution Matching Distillation,字面意思就是"让分布对上"。它和 GAN 是亲戚:都有个裁判在挑刺。</div>
+</section>
+
+<section id="moe">
+  <div class="kicker">前沿 · 大模型</div>
+  <h2>MoE 混合专家:大,但每次只用一小块</h2>
+  <p class="lead">最新的大模型(DeepSeek、Mixtral,传闻里的 GPT)很多是 MoE:模型里养着一堆"专家"子网络,但每个词进来,只激活其中两三个。这样总参数能堆得很大,每次真正算的却只是一小部分,又聪明又算得起。点不同的词,看它被分给谁。</p>
+  <div class="demo">
+    <h4>实验:每个词被路由到哪几个专家</h4>
+    <div id="moeWords" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div id="moeExperts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"></div>
+    <p class="hint" style="margin-top:12px">一个路由器看每个词,挑最合适的两个专家处理。亮起的就是被选中的。</p>
+  </div>
+  <div class="anchor">好处:参数量翻十倍,每次计算量几乎不变。坏处:训练和部署都更麻烦,得把专家摊到多张卡上。这是当下做"又大又省"的主流路子。</div>
+</section>
+
+<section id="quant">
+  <div class="kicker">前沿 · 你开过的 int8</div>
+  <h2>量化:把模型压扁还能用</h2>
+  <p class="lead">模型里每个权重,本来是个精细的小数(比如 0.6817…)。量化就是把它近似成少数几档(比如只能取 0、0.25、0.5…)。模型瞬间小一截、快一截,质量只掉一点点。拖滑块,看"压扁"的过程。</p>
+  <div class="demo">
+    <h4>实验:精度档位,越拖越糙</h4>
+    <canvas id="cvQuant" width="420" height="160" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><label>档位</label><input type="range" id="quant" min="2" max="32" value="32"><span class="val" id="quantV">fp16</span></div>
+    <p class="hint" id="quantTip"></p>
+  </div>
+  <div class="anchor">你给 Matrix-Game 开的 --use_int8,就是把权重压到 8 位整数(256 档),换来更小的显存和更快的速度。再狠一点的 fp8、int4 也是同一招。</div>
+</section>
+
+<section id="scale">
+  <div class="kicker">前沿 · 工业规律</div>
+  <h2>Scaling Laws:大就是好,而且能算出来</h2>
+  <p class="lead">最反直觉的一条工业规律:把模型、数据、算力一起加大,误差会沿着一条可预测的曲线往下掉。所以训练前就能估出"花这么多钱,能好到什么程度"。拖滑块看这条线。</p>
+  <div class="demo">
+    <h4>实验:算力越多,误差越低(而且可预测)</h4>
+    <canvas id="cvScale" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><label>算力</label><input type="range" id="scale" min="2" max="100" value="20"><span class="val" id="scaleV"></span></div>
+    <p class="hint" id="scaleTip"></p>
+  </div>
+  <div class="anchor">这就是各家大模型敢一代代往上堆的底气:不是赌,是沿着一条画好的曲线走。难点在于,曲线要继续往下,数据和算力得指数级地加。</div>
+</section>
+
+<section id="cost">
+  <div class="kicker">前沿 · 长上下文</div>
+  <h2>注意力的代价:每个词都要和每个词比一遍</h2>
+  <p class="lead">注意力很强,但有个硬伤:N 个词,就要算 N×N 次两两比较。上下文翻一倍,计算量翻四倍。这就是"长上下文"又贵又慢的根。拖滑块,看格子怎么炸开。</p>
+  <div class="demo">
+    <h4>实验:词数对比计算量</h4>
+    <canvas id="cvCost" width="300" height="300" style="width:100%;max-width:300px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><label>词数 N</label><input type="range" id="cost" min="2" max="40" value="8"><span class="val" id="costV"></span></div>
+    <p class="hint" id="costTip"></p>
+  </div>
+  <div class="anchor">你日志里见过的 flash_attn(FlashAttention),就是专门优化这步的:同样是 N²,但用更省显存的方式算,顺带提速。长上下文的竞赛,基本都在这上面做文章。</div>
+</section>
+
 </main>
 
 <footer><div class="wrap">
@@ -535,6 +652,111 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
       let t=1;const delay=f*500;
       setTimeout(()=>{const iv=setInterval(()=>{t-=0.18;renderNoised(ctx,clean,noise,Math.max(0,t));if(t<=0)clearInterval(iv);},90);},delay);
     }});
+})();
+
+// ===== Chapter 2 =====
+// A. embeddings map
+(()=>{const words=[
+  {t:'国王',x:20,y:18},{t:'女王',x:28,y:24},{t:'王子',x:15,y:28},
+  {t:'猫',x:73,y:20},{t:'狗',x:82,y:26},{t:'兔子',x:75,y:32},
+  {t:'红',x:22,y:72},{t:'蓝',x:31,y:78},{t:'绿',x:18,y:80},
+  {t:'开心',x:74,y:70},{t:'难过',x:83,y:76},{t:'愤怒',x:70,y:82}];
+  const map=$('embedMap');if(!map)return;
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('style','position:absolute;inset:0;width:100%;height:100%;pointer-events:none');map.appendChild(svg);
+  const els=words.map((w,i)=>{const d=document.createElement('button');d.textContent=w.t;
+    d.style.cssText=`position:absolute;left:${w.x}%;top:${w.y}%;transform:translate(-50%,-50%);border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 13px;font-size:14px;cursor:pointer;transition:.2s;z-index:2`;
+    d.onclick=()=>sel(i);map.appendChild(d);return d;});
+  function sel(i){svg.innerHTML='';els.forEach(e=>{e.style.background='var(--paper)';e.style.color='var(--ink)';e.style.borderColor='var(--line)';});
+    const near=words.map((w,j)=>({j,d:Math.hypot(w.x-words[i].x,w.y-words[i].y)})).sort((a,b)=>a.d-b.d);
+    els[i].style.background='var(--ink)';els[i].style.color='#fff';
+    near.slice(1,4).forEach(o=>{els[o.j].style.borderColor='var(--ar)';els[o.j].style.color='var(--ar)';
+      const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+      l.setAttribute('x1',words[i].x+'%');l.setAttribute('y1',words[i].y+'%');l.setAttribute('x2',words[o.j].x+'%');l.setAttribute('y2',words[o.j].y+'%');
+      l.setAttribute('stroke','#0f8a6a');l.setAttribute('stroke-width','1.5');l.setAttribute('opacity','.45');svg.appendChild(l);});}
+  sel(0);
+})();
+// B. attention
+(()=>{const words=['那只','猫','跳上','桌子',',','因为','它','看见','了','鱼'];
+  const A={6:{1:1,0:.25,9:.15},2:{1:.7,3:.6},7:{6:.4,9:.7,1:.2},9:{1:.4,7:.4,2:.25},3:{2:.6,1:.3},1:{1:1}};
+  const cont=$('attnSent');if(!cont)return;
+  const els=words.map((w,i)=>{const s=document.createElement('span');s.textContent=w;
+    s.style.cssText='padding:5px 10px;border-radius:7px;cursor:pointer;border:1px solid var(--line);transition:.2s;background:var(--paper)';
+    s.onclick=()=>show(i);cont.appendChild(s);return s;});
+  function show(i){const w=A[i]||{[i]:1};const max=Math.max(...Object.values(w));
+    els.forEach((e,j)=>{const a=(w[j]||0)/max;e.style.background=a>0?`rgba(15,138,106,${(.1+a*.62).toFixed(2)})`:'var(--paper)';e.style.color=a>.5?'#fff':'var(--ink)';e.style.borderColor=j===i?'var(--ink)':'var(--line)';});
+    const ref=Object.entries(w).filter(([k,v])=>+k!==i&&v>.15).map(([k])=>'"'+words[k]+'"').join('、');
+    $('attnTip').textContent='"'+words[i]+'" 在重点参考:'+(ref||'(主要看自己)')+'。颜色越深越关注。';}
+  show(6);
+})();
+// D. flow matching
+(()=>{const c=$('cvFlow');if(!c)return;const ctx=c.getContext('2d'),w=420,h=220;let straight=false,seed=1;
+  function base(){ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#bdbab1';for(let i=0;i<70;i++){const r=((i*97)%100)/100,r2=((i*53)%100)/100;ctx.beginPath();ctx.arc(28+r*42,40+r2*140,1.6,0,7);ctx.fill();}
+    ctx.fillStyle='#6b54d3';ctx.beginPath();ctx.arc(385,110,11,0,7);ctx.fill();
+    ctx.fillStyle='#6b6a65';ctx.font='12px sans-serif';ctx.fillText('噪声',24,205);ctx.fillText('目标',366,205);
+    ctx.fillStyle=straight?'#0f8a6a':'#c9772a';ctx.font='13px sans-serif';ctx.fillText(straight?'直路 (flow matching),几步到':'弯路 (扩散),要很多步',135,20);}
+  base();
+  function run(){base();seed++;const sy=55+((seed*61)%120),sx=46,ex=378,ey=110;let t=0;
+    const iv=setInterval(()=>{t+=0.02;if(t>1){clearInterval(iv);return;}
+      const x=sx+(ex-sx)*t;let y=sy+(ey-sy)*t;if(!straight)y+=Math.sin(t*Math.PI*3.2)*48*(1-t*0.6);
+      ctx.fillStyle=straight?'#0f8a6a':'#c9772a';ctx.beginPath();ctx.arc(x,y,3.2,0,7);ctx.fill();},26);}
+  $('flowGo').onclick=run;
+  $('flowToggle').onclick=()=>{straight=!straight;base();$('flowTip').textContent=straight?'直路:几步就从噪声到目标。这是 Wan2.2、FLUX 的路子。':'弯路:要来回擦很多步才到。这是经典扩散。';};
+})();
+// E. DMD distribution matching
+(()=>{const c=$('cvDmd');if(!c)return;const ctx=c.getContext('2d'),w=420,h=220;let teacher=[],student=[];
+  function init(){teacher=[];student=[];for(let i=0;i<70;i++){const a=(i*0.7),r=((i*37)%40);teacher.push([285+Math.cos(a)*r*0.9,110+Math.sin(a)*r*0.9]);}
+    for(let i=0;i<70;i++){const a=(i*1.1),r=((i*29)%42);student.push([130+Math.cos(a)*r,108+Math.sin(a)*r]);}draw();}
+  function draw(){ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='rgba(107,84,211,.65)';teacher.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3,0,7);ctx.fill();});
+    ctx.fillStyle='rgba(15,138,106,.8)';student.forEach(p=>{ctx.beginPath();ctx.arc(p[0],p[1],3,0,7);ctx.fill();});
+    ctx.fillStyle='#6b6a65';ctx.font='12px sans-serif';ctx.fillText('学生(一步)',95,205);ctx.fillText('老师(几十步)',255,205);}
+  function push(){student=student.map((p,i)=>{const t=teacher[i%teacher.length];return[p[0]+(t[0]-p[0])*0.28+(((i*7)%10)-5)*0.7,p[1]+(t[1]-p[1])*0.28+(((i*5)%10)-5)*0.7];});draw();}
+  $('dmdGo').onclick=push;$('dmdReset').onclick=init;init();
+})();
+// F. MoE routing
+(()=>{const words=['猫','奔跑','红色','因为','方程','旋律','跳跃','悲伤'];
+  const route={'猫':[0,3],'奔跑':[1,4],'红色':[2,6],'因为':[7,3],'方程':[4,0],'旋律':[6,2],'跳跃':[1,5],'悲伤':[7,5]};
+  const wc=$('moeWords'),ec=$('moeExperts');if(!wc)return;
+  const ew=[];for(let i=0;i<8;i++){const d=document.createElement('div');d.textContent='专家 '+(i+1);
+    d.style.cssText='padding:15px 8px;text-align:center;border:1px solid var(--line);border-radius:9px;background:var(--paper);color:var(--muted);font-size:13px;transition:.25s';ec.appendChild(d);ew.push(d);}
+  const wb=words.map(w=>{const b=document.createElement('button');b.textContent=w;b.className='b ghost';b.onclick=()=>route_(w,b);wc.appendChild(b);return b;});
+  function route_(w,btn){wb.forEach(x=>x.style.outline='none');btn.style.outline='2px solid var(--ar)';
+    ew.forEach((e,i)=>{const on=route[w].includes(i);e.style.background=on?'var(--ar)':'var(--paper)';e.style.color=on?'#fff':'var(--muted)';e.style.borderColor=on?'var(--ar)':'var(--line)';});}
+  route_(words[0],wb[0]);
+})();
+// G. quantization
+(()=>{const c=$('cvQuant');if(!c)return;const ctx=c.getContext('2d'),w=420,h=160;
+  function curve(x){return h/2-Math.sin(x/55)*46-Math.sin(x/17)*12;}
+  function upd(){const lv=+$('quant').value;const label=lv>=32?'fp16':lv>=8?'int8':lv>=4?'int4':'int2';$('quantV').textContent=label;
+    ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#c2bfb6';ctx.lineWidth=2;ctx.beginPath();for(let x=0;x<w;x++){const y=curve(x);x?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    ctx.strokeStyle='#6b54d3';ctx.lineWidth=2.5;ctx.beginPath();const step=120/lv;
+    for(let x=0;x<w;x++){let y=Math.round(curve(x)/step)*step;x?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    $('quantTip').textContent=label==='fp16'?'原始精度,最准,但最占地方、最慢。':'压到 '+label+'('+lv+' 档):模型更小更快,曲线开始有台阶感(就是质量损失),但通常肉眼难分。';}
+  $('quant').addEventListener('input',upd);upd();
+})();
+// H. scaling laws
+(()=>{const c=$('cvScale');if(!c)return;const ctx=c.getContext('2d'),W=420,H=220;
+  const loss=x=>1/(1+x*0.05);
+  function upd(){const v=+$('scale').value;ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#d8d5cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(42,18);ctx.lineTo(42,H-28);ctx.lineTo(W-18,H-28);ctx.stroke();
+    ctx.fillStyle='#9a988f';ctx.font='11px sans-serif';ctx.fillText('误差',10,28);ctx.fillText('算力/数据 →',W-92,H-10);
+    ctx.strokeStyle='#6b54d3';ctx.lineWidth=2.5;ctx.beginPath();
+    for(let x=2;x<=100;x++){const px=42+(x/100)*(W-62),py=22+loss(x)*(H-56);x===2?ctx.moveTo(px,py):ctx.lineTo(px,py);}ctx.stroke();
+    const mx=42+(v/100)*(W-62),my=22+loss(v)*(H-56);ctx.fillStyle='#0f8a6a';ctx.beginPath();ctx.arc(mx,my,6,0,7);ctx.fill();
+    $('scaleV').textContent=v+'%';
+    $('scaleTip').textContent='算力到 '+v+'%,误差降到 '+loss(v).toFixed(2)+'。注意后半段:同样的进步,要花指数级更多算力(收益递减)。';}
+  $('scale').addEventListener('input',upd);upd();
+})();
+// I. N^2 attention cost
+(()=>{const c=$('cvCost');if(!c)return;const ctx=c.getContext('2d'),S=300;
+  function upd(){const n=+$('cost').value;$('costV').textContent='N='+n;
+    ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,S,S);const cell=Math.min(276/n,40),off=(S-cell*n)/2;
+    for(let r=0;r<n;r++)for(let col=0;col<n;col++){ctx.fillStyle='rgba(107,84,211,'+(0.45+0.5*((r+col)/(2*n))).toFixed(2)+')';ctx.fillRect(off+col*cell,off+r*cell,Math.max(1,cell-1),Math.max(1,cell-1));}
+    $('costTip').textContent=n+' 个词,要算 '+n+'×'+n+' = '+(n*n)+' 次两两比较。词数翻倍,格子翻四倍。';}
+  $('cost').addEventListener('input',upd);upd();
 })();
 </script>
 </body>
