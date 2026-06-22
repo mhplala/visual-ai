@@ -116,6 +116,14 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <a href="#quant">量化</a>
   <a href="#scale">Scaling</a>
   <a href="#cost">N²</a>
+  <span style="color:var(--faint);align-self:center">·第三章·</span>
+  <a href="#rlhf">对齐</a>
+  <a href="#reason">推理</a>
+  <a href="#rag">RAG</a>
+  <a href="#mm">多模态</a>
+  <a href="#agent">Agent</a>
+  <a href="#spec">投机解码</a>
+  <a href="#dist">多卡训练</a>
 </div></nav>
 
 <main class="wrap">
@@ -459,6 +467,116 @@ t   = <span class="k">随机</span>(1, T)<br>
   <div class="anchor">你日志里见过的 flash_attn(FlashAttention),就是专门优化这步的:同样是 N²,但用更省显存的方式算,顺带提速。长上下文的竞赛,基本都在这上面做文章。</div>
 </section>
 
+<section id="ch3" style="border-top:2px solid var(--ink);text-align:center;padding-top:42px">
+  <div class="kicker">第三章</div>
+  <h2 style="font-size:28px">从底模到真正能用的系统</h2>
+  <p class="lead" style="max-width:620px;margin:6px auto 0">前两章讲的是模型本身。但 ChatGPT、o1、你这一晚用的各种东西,底模只是起点。这一章讲怎么把"会接话的底模"变成"听话、会查资料、会用工具、会推理"的真系统,以及训练它们的工程现实。</p>
+</section>
+
+<section id="rlhf">
+  <div class="kicker">前沿 · 对齐</div>
+  <h2>RLHF:把"会接话"调教成"听话又有用"</h2>
+  <p class="lead">底模只会预测下一个词,接得顺,但可能没用、甚至没礼貌。RLHF 的办法:让人对模型的两个回答挑哪个更好,用这些偏好训出一个"打分器",再用它把模型往人更喜欢的方向推。你来当那个挑的人,点几次试试。</p>
+  <div class="demo">
+    <h4>实验:你来挑更好的回答</h4>
+    <div id="rlhfBox"></div>
+    <div class="ctrl" style="margin-top:14px"><span style="font-size:13px;color:var(--muted)">对齐度</span>
+      <div style="flex:1;height:10px;background:var(--canvas);border-radius:6px;overflow:hidden;border:1px solid var(--line)"><div id="rlhfBar" style="height:100%;width:8%;background:var(--ar);border-radius:6px;transition:.5s"></div></div></div>
+    <p class="hint" id="rlhfTip">点你觉得更好的那个。挑得越多,模型越懂你要什么。</p>
+  </div>
+  <div class="anchor">这就是 ChatGPT 比原始 GPT"懂事"的原因。新一点的做法叫 DPO,更省事:跳过单独的打分器,直接拿偏好数据调模型。对齐做不好,模型再聪明也不好用。</div>
+</section>
+
+<section id="reason">
+  <div class="kicker">前沿 · 推理</div>
+  <h2>推理模型:先想,再答</h2>
+  <p class="lead">普通模型张口就来,难题容易翻车。o1、DeepSeek-R1 这类推理模型会先在心里写一大段思考,再给答案。本质是答题时多花算力去"想"(叫 test-time compute)。同一道题,看两种答法的差别。</p>
+  <div class="demo">
+    <h4>实验:一道题,两种答法</h4>
+    <div style="background:var(--canvas);border-radius:9px;padding:12px 14px;font-size:15px;margin-bottom:12px">一支笔和一个本子一共 11 元,笔比本子贵 10 元。笔多少钱?</div>
+    <div class="ctrl"><button class="b ghost" id="reasonFast">直接答</button><button class="b" id="reasonSlow">先想再答</button></div>
+    <div id="reasonOut" style="margin-top:14px"></div>
+  </div>
+  <div class="anchor">很多人和老模型会脱口"10 元"(错)。先想再答会一步步推到"10.5 元"(对)。这就是推理模型答题时慢吞吞输出一大段的原因:慢,但对得多。</div>
+</section>
+
+<section id="rag">
+  <div class="kicker">前沿 · 外挂记忆</div>
+  <h2>RAG:给模型接一个会查资料的外挂</h2>
+  <p class="lead">模型权重里记不下所有事,尤其是你公司内部的、或最新的信息。RAG 的做法:先去外部知识库里搜出相关的几段,再让模型基于这几段回答。点一个问题,看它先搜到什么、再怎么答。</p>
+  <div class="demo">
+    <h4>实验:先检索,再回答</h4>
+    <div id="ragQs" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div><div class="tag" style="margin-bottom:6px">知识库(命中的会高亮)</div><div id="ragDocs" style="display:flex;flex-direction:column;gap:6px"></div></div>
+      <div><div class="tag" style="margin-bottom:6px">模型基于检索结果的回答</div><div id="ragAns" style="background:var(--ar-soft);border-radius:9px;padding:12px;font-size:14px;color:#0a5e48;min-height:60px">点上面一个问题。</div></div>
+    </div>
+  </div>
+  <div class="anchor">好处:知识随时能更新(改知识库就行,不用重训模型),还能给出处。市面上几乎所有"基于你文档问答"的产品,底层都是 RAG。</div>
+</section>
+
+<section id="mm">
+  <div class="kicker">前沿 · 看图读字</div>
+  <h2>多模态:让模型同时看图和读字</h2>
+  <p class="lead">怎么让一个本来只会处理文字的模型看懂图?办法是把图也切成小块、变成和文字一样的 token,再一起喂给模型。这样它既读你的问题,也"读"这张图,然后回答。点一下看图怎么变成 token。</p>
+  <div class="demo">
+    <h4>实验:图 → 小块 → token → 回答</h4>
+    <div class="row" style="align-items:flex-start">
+      <canvas id="cvMM" width="160" height="160" style="image-rendering:auto;background:#fff;max-width:160px"></canvas>
+      <div class="col">
+        <div style="font-size:14px;margin-bottom:8px">问题:<b>图里有什么?</b></div>
+        <button class="b" id="mmGo">切块并识别</button>
+        <div id="mmOut" style="margin-top:12px;font-size:14px;color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+  <div class="anchor">CLIP 就是干这个的:把图和文字映到同一个意思空间(回到第二章那张向量地图)。你做的视频生成里,文字条件进 DiT,也是先变成这种 token 再 cross-attention 进去的。</div>
+</section>
+
+<section id="agent">
+  <div class="kicker">前沿 · 工具循环</div>
+  <h2>Agent:想 → 做 → 看 的循环</h2>
+  <p class="lead">让模型不止会说话,还能动手:想一步、调一个工具(搜索、计算、跑代码)、看一眼结果,再接着想,直到把事办完。点"下一步",走一遍这个循环。</p>
+  <div class="demo">
+    <h4>实验:一个 agent 怎么办事</h4>
+    <div id="agentSteps" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;min-height:40px"></div>
+    <button class="b" id="agentNext">下一步</button><button class="b ghost" id="agentReset">重来</button>
+  </div>
+  <div class="anchor">这一整晚我就是这么一个 agent:想一步、调个工具(SSH、改文件、跑渲染)、看结果、再想下一步。把这个循环包起来,就是"AI 智能体"。</div>
+</section>
+
+<section id="spec">
+  <div class="kicker">前沿 · 推理提速</div>
+  <h2>投机解码:小模型先猜,大模型一次验</h2>
+  <p class="lead">大模型一个词一个词地生成,慢。投机解码的妙招:让一个小快模型先一口气猜出后面几个词,大模型再用一次计算把这几个一起验一遍,对的直接采纳,错的从那里重来。又快又不掉质量。点一下看一轮。</p>
+  <div class="demo">
+    <h4>实验:草稿到验证,跑一轮</h4>
+    <div id="specOut" style="font-size:17px;line-height:2;min-height:80px;background:var(--canvas);border-radius:9px;padding:12px 14px;border:1px solid var(--line)"></div>
+    <div class="ctrl"><button class="b" id="specGo">跑一轮(草稿→验证)</button><button class="b ghost" id="specReset">重来</button></div>
+  </div>
+  <div class="anchor">小模型猜得准的部分,大模型就省下了一个个生成的功夫,整体能快 2 到 3 倍。因为最后都由大模型把关,质量不变。这是现在线上推理普遍在用的招。</div>
+</section>
+
+<section id="dist">
+  <div class="kicker">前沿 · 多卡训练</div>
+  <h2>分布式训练:一个模型摊到很多张卡</h2>
+  <p class="lead">大模型加大批数据,一张卡放不下,于是要拆。三种拆法,点着切换看:把数据拆开(每张卡同款模型、不同数据)、把一层算子拆开(张量并行)、把不同层分到不同卡(流水线)。</p>
+  <div class="demo">
+    <h4>实验:三种并行,各拆什么</h4>
+    <div class="ctrl"><button class="b" data-par="data">数据并行</button><button class="b ghost" data-par="tensor">张量并行</button><button class="b ghost" data-par="pipe">流水线并行</button></div>
+    <div id="distView" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px"></div>
+    <p class="hint" id="distTip" style="margin-top:10px"></p>
+  </div>
+  <div class="anchor">你那两张 B200 上跑的 StreamDiffusionV2,就用流水线并行把模型摊开。真训大模型时,这三种常常一起上(3D 并行),这也是训练里最硬核的工程部分。</div>
+</section>
+
+<section id="future" style="text-align:center">
+  <div class="kicker">前路</div>
+  <h2>两条河,正在汇成一条</h2>
+  <p class="lead" style="max-width:620px;margin:6px auto 14px">第一章那两台引擎,最前沿的研究正在把它们缝成一个:Diffusion Forcing、MAR 这些工作,让自回归和扩散用同一套框架表达;Cosmos 的双塔、世界模型也都朝这个方向。你现在手里有整张地图了。</p>
+  <p class="lead" style="max-width:620px;margin:0 auto;color:var(--muted)">剩下就两件事:多读论文,多亲手训。你有 B200,这条件很多人没有。</p>
+</section>
+
 </main>
 
 <footer><div class="wrap">
@@ -757,6 +875,85 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
     for(let r=0;r<n;r++)for(let col=0;col<n;col++){ctx.fillStyle='rgba(107,84,211,'+(0.45+0.5*((r+col)/(2*n))).toFixed(2)+')';ctx.fillRect(off+col*cell,off+r*cell,Math.max(1,cell-1),Math.max(1,cell-1));}
     $('costTip').textContent=n+' 个词,要算 '+n+'×'+n+' = '+(n*n)+' 次两两比较。词数翻倍,格子翻四倍。';}
   $('cost').addEventListener('input',upd);upd();
+})();
+
+// ===== Chapter 3 =====
+// RLHF
+(()=>{const data=[
+ {p:'帮我写一句请假理由',good:'您好,我因身体不适需就医,明天请假一天,工作已交接给小李。',bad:'你自己不会编吗?'},
+ {p:'怎么煮溏心蛋?',good:'水开后下蛋煮 6 分半,捞出马上过冷水,蛋黄就是溏心的。',bad:'蛋,煮,水,完事。'},
+ {p:'安慰我一下',good:'今天听起来挺不容易的,先别急着怪自己,要不说说发生了什么?',bad:'多大点事,想开点。'},
+ {p:'用一句话解释黑洞',good:'黑洞是引力强到连光都跑不出来的天体,像宇宙里一个只进不出的坑。',bad:'就是黑的洞。'}];
+  const box=$('rlhfBox');if(!box)return;let idx=0,score=8;
+  function show(){const d=data[idx%data.length];const swap=(idx*7)%2===0;const left=swap?d.bad:d.good,right=swap?d.good:d.bad;
+    box.innerHTML='<div style="font-size:14px;color:var(--muted);margin-bottom:8px">提问:'+d.p+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
+      '<button class="rA b ghost" data-g="'+(swap?0:1)+'" style="text-align:left;white-space:normal;padding:12px;line-height:1.5">'+left+'</button>'+
+      '<button class="rA b ghost" data-g="'+(swap?1:0)+'" style="text-align:left;white-space:normal;padding:12px;line-height:1.5">'+right+'</button></div>';
+    box.querySelectorAll('.rA').forEach(btn=>btn.onclick=()=>{const ok=btn.dataset.g==='1';
+      score=Math.max(0,Math.min(100,score+(ok?23:-9)));$('rlhfBar').style.width=score+'%';
+      $('rlhfTip').textContent=ok?'挑对了,模型往"有用、礼貌"那边又调了一点。对齐度上升。':'你挑了较差的那个,模型会被带歪,所以人工标注的质量特别关键。';
+      idx++;setTimeout(show,450);});}
+  show();
+})();
+// reasoning
+(()=>{const out=$('reasonOut');if(!out)return;
+  $('reasonFast').onclick=()=>{out.innerHTML='<div style="color:#c9772a;font-size:15px">脱口而出:<b>10 元</b>,错了。(本能反应,没细算)</div>';};
+  $('reasonSlow').onclick=()=>{const steps=['设本子 = x 元,那笔 = x + 10 元。','两个加起来:x + (x + 10) = 11。','2x + 10 = 11,所以 2x = 1,x = 0.5。','本子 0.5 元,笔 = 0.5 + 10 = 10.5 元。'];
+    out.innerHTML='';let i=0;const iv=setInterval(()=>{const d=document.createElement('div');d.style.cssText='font-size:14px;color:var(--muted);margin:4px 0;opacity:0;transition:.4s';d.textContent='思考 '+(i+1)+':'+steps[i];out.appendChild(d);requestAnimationFrame(()=>d.style.opacity=1);
+      if(++i>=steps.length){clearInterval(iv);const r=document.createElement('div');r.style.cssText='color:var(--ar);font-size:15px;margin-top:8px;font-weight:600';r.textContent='答案:笔 10.5 元,对了。';out.appendChild(r);}},650);};
+})();
+// RAG
+(()=>{const docs=[{t:'退款政策:7 天内未拆封可全额退款。',k:'退款'},{t:'营业时间:周一至周五 9:00 到 18:00。',k:'时间'},
+  {t:'会员折扣:金卡 8 折,白金 7 折。',k:'折扣'},{t:'退款流程:订单页点"申请退款",3 个工作日到账。',k:'退款'}];
+  const qs=[{q:'怎么退款?',k:'退款',a:'7 天内未拆封可全额退款;在订单页点"申请退款",3 个工作日到账。'},
+   {q:'几点关门?',k:'时间',a:'周一到周五 18:00 关门。'},{q:'金卡几折?',k:'折扣',a:'金卡 8 折。'}];
+  const qc=$('ragQs'),dc=$('ragDocs');if(!qc)return;
+  const de=docs.map(d=>{const e=document.createElement('div');e.textContent=d.t;e.style.cssText='font-size:13px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);transition:.25s';dc.appendChild(e);return e;});
+  qs.forEach(q=>{const b=document.createElement('button');b.textContent=q.q;b.className='b ghost';b.onclick=()=>{
+    de.forEach((e,i)=>{const hit=docs[i].k===q.k;e.style.background=hit?'var(--ar-soft)':'var(--paper)';e.style.borderColor=hit?'var(--ar)':'var(--line)';});
+    $('ragAns').textContent=q.a;};qc.appendChild(b);});
+})();
+// multimodal
+(()=>{const c=$('cvMM');if(!c)return;const ctx=c.getContext('2d');
+  function draw(){ctx.fillStyle='#fff';ctx.fillRect(0,0,160,160);ctx.fillStyle='#e24b4a';ctx.beginPath();ctx.arc(50,52,28,0,7);ctx.fill();ctx.fillStyle='#378add';ctx.fillRect(86,90,46,46);}
+  draw();
+  $('mmGo').onclick=()=>{draw();let i=0;const iv=setInterval(()=>{const r=Math.floor(i/4),col=i%4;ctx.strokeStyle='rgba(107,84,211,.85)';ctx.lineWidth=1.5;ctx.strokeRect(col*40,r*40,40,40);
+    if(++i>=16){clearInterval(iv);$('mmOut').innerHTML='切成 16 个小块,变成 token,模型读完回答:<br><b style="color:var(--ar)">看到一个红色的圆和一个蓝色的方块。</b>';}},65);};
+})();
+// agent loop
+(()=>{const steps=[{k:'想',t:'要算 14×23 再加 100。先算乘法,用计算器。',c:'#6b54d3'},{k:'做',t:'调用 计算器(14 × 23)',c:'#c9772a'},
+  {k:'看',t:'工具返回:322',c:'#6b6a65'},{k:'想',t:'再加 100,继续用计算器。',c:'#6b54d3'},{k:'做',t:'调用 计算器(322 + 100)',c:'#c9772a'},
+  {k:'看',t:'工具返回:422',c:'#6b6a65'},{k:'答',t:'结果是 422。',c:'#0f8a6a'}];
+  const box=$('agentSteps');if(!box)return;let i=0;
+  function reset(){i=0;box.innerHTML='<span style="color:var(--faint);font-size:13px">点"下一步"开始</span>';}
+  $('agentNext').onclick=()=>{if(i===0)box.innerHTML='';if(i>=steps.length)return;const s=steps[i++];const d=document.createElement('div');
+    d.style.cssText='display:flex;gap:10px;align-items:flex-start;opacity:0;transition:.3s';
+    d.innerHTML='<span style="flex:0 0 30px;height:24px;border-radius:6px;background:'+s.c+';color:#fff;display:grid;place-items:center;font-size:12px;font-weight:600">'+s.k+'</span><span style="font-size:14px;padding-top:2px">'+s.t+'</span>';
+    box.appendChild(d);requestAnimationFrame(()=>d.style.opacity=1);};
+  $('agentReset').onclick=reset;reset();
+})();
+// speculative decoding
+(()=>{const out=$('specOut');if(!out)return;const target=['今天','天气','很','好','适合','出门','散步'];let done=0,seed=3;
+  function reset(){done=0;out.innerHTML='<span style="color:var(--faint)">点下面开始</span>';}
+  $('specGo').onclick=()=>{if(done>=target.length)return;const draftN=Math.min(3,target.length-done);
+    seed=(seed*9301+49297)%233280;const accept=Math.min(draftN,1+(seed%2));
+    let html=target.slice(0,done).map(w=>'<span>'+w+'</span>').join('');
+    for(let k=0;k<draftN;k++){const ok=k<accept;html+='<span style="color:'+(ok?'#0f8a6a':'#c9772a')+';text-decoration:'+(ok?'none':'line-through')+'">'+target[done+k]+'</span>';}
+    html+='<div style="font-size:12px;color:var(--muted);margin-top:8px">草稿模型一口气猜了 '+draftN+' 个,大模型一次验证:采纳 '+accept+' 个'+(accept<draftN?',第 '+(accept+1)+' 个不对,从这儿重来':'')+'。</div>';
+    done+=accept;if(done>=target.length)html+='<div style="color:var(--ar);font-size:13px;margin-top:4px">生成完成。</div>';out.innerHTML=html;};
+  reset();
+})();
+// distributed training
+(()=>{const view=$('distView');if(!view)return;const btns=document.querySelectorAll('[data-par]');
+  const modes={data:{tip:'数据并行:每张卡放一份完整模型,各吃不同的数据块,再把学到的合起来。最常用。',cell:i=>['完整模型','数据块 '+(i+1)]},
+   tensor:{tip:'张量并行:把同一层的大矩阵切成几片,分到不同卡上一起算。用在单层都放不下时。',cell:i=>['同一层','第 '+(i+1)+'/4 片']},
+   pipe:{tip:'流水线并行:模型按层切成几段,不同卡负责不同段,像流水线一样往下传。你的 StreamDiffusionV2 用的就是它。',cell:i=>['第 '+(i+1)+' 段','层 '+(i*3+1)+'–'+(i*3+3)]}};
+  function render(m){btns.forEach(b=>b.className='b'+(b.dataset.par===m?'':' ghost'));view.innerHTML='';
+    for(let i=0;i<4;i++){const c=modes[m].cell(i);const d=document.createElement('div');
+      d.style.cssText='border:1px solid var(--line);border-radius:9px;padding:12px 8px;text-align:center;background:var(--paper)';
+      d.innerHTML='<div class="tag">GPU '+(i+1)+'</div><div style="font-size:13px;margin-top:6px;color:var(--ink)">'+c[0]+'</div><div style="font-size:12px;color:var(--muted)">'+c[1]+'</div>';view.appendChild(d);}
+    $('distTip').textContent=modes[m].tip;}
+  btns.forEach(b=>b.onclick=()=>render(b.dataset.par));render('data');
 })();
 </script>
 </body>
