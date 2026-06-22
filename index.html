@@ -124,6 +124,15 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
   <a href="#agent">Agent</a>
   <a href="#spec">投机解码</a>
   <a href="#dist">多卡训练</a>
+  <span style="color:var(--faint);align-self:center">·第四章·</span>
+  <a href="#data4">数据</a>
+  <a href="#tok">分词</a>
+  <a href="#gd">梯度下降</a>
+  <a href="#lr">学习率</a>
+  <a href="#overfit">过拟合</a>
+  <a href="#mem">显存</a>
+  <a href="#lora">LoRA</a>
+  <a href="#watch">盯训练</a>
 </div></nav>
 
 <main class="wrap">
@@ -577,6 +586,126 @@ t   = <span class="k">随机</span>(1, T)<br>
   <p class="lead" style="max-width:620px;margin:0 auto;color:var(--muted)">剩下就两件事:多读论文,多亲手训。你有 B200,这条件很多人没有。</p>
 </section>
 
+<section id="ch4" style="border-top:2px solid var(--ink);text-align:center;padding-top:42px">
+  <div class="kicker">第四章</div>
+  <h2 style="font-size:28px">亲手训一个:从零到跑通</h2>
+  <p class="lead" style="max-width:620px;margin:6px auto 0">前面讲的是模型"是什么"。这一章讲"怎么训出来":数据怎么洗、模型怎么学、显存怎么塞、训练怎么盯。这是把你从"看懂"变成"能做"的最后一段。</p>
+</section>
+
+<section id="data4">
+  <div class="kicker">训练 · 第一步</div>
+  <h2>数据:80% 的功夫都在这</h2>
+  <p class="lead">大家爱聊模型结构,但真训过的人都知道,决定成败的是数据。收来的原始数据里全是广告、重复、乱码,得先洗干净、去重、过滤,模型才学得好。点一下,看一堆脏数据被洗成能用的。</p>
+  <div class="demo">
+    <h4>实验:把脏数据洗干净</h4>
+    <div id="dataRows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+    <div class="ctrl"><button class="b" id="dataClean">清洗 + 去重 + 过滤</button><button class="b ghost" id="dataReset">重来</button>
+      <span style="font-size:13px;color:var(--muted)">数据质量</span><div style="flex:1;min-width:70px;height:9px;background:var(--canvas);border-radius:6px;overflow:hidden;border:1px solid var(--line)"><div id="dataBar" style="height:100%;width:32%;background:var(--ar);transition:.6s"></div></div></div>
+  </div>
+  <div class="anchor">"垃圾进,垃圾出"在这行是字面意思。很多开源模型的差距,差在数据配方而不是结构。所以做模型的公司,常常一半人在搞数据。</div>
+</section>
+
+<section id="tok">
+  <div class="kicker">训练 · 喂进去之前</div>
+  <h2>分词:文字怎么变成模型能吃的 token</h2>
+  <p class="lead">模型不直接吃字,吃的是 token,一种介于字和词之间的小块。常见词是一整块,生僻的拆成几块。这套切法(BPE)是统计出来的:越常一起出现的越合成一块。点几个词,看它怎么被切。</p>
+  <div class="demo">
+    <h4>实验:点一个词,看它被切成几个 token</h4>
+    <div id="tokWords" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div id="tokOut" style="display:flex;gap:6px;flex-wrap:wrap;min-height:44px;align-items:center"></div>
+    <p class="hint" id="tokTip">越常见的词,切出来的 token 越少越省。</p>
+  </div>
+  <div class="anchor">还记得第一章那个 77-token 截断吗?CLIP 一次最多吃 77 个 token,我们的 prompt 超了,后面就被砍掉。这里说的 token 就是那个 token。模型的"上下文长度"、按量计费,数的都是它。</div>
+</section>
+
+<section id="gd">
+  <div class="kicker">训练 · 核心机制</div>
+  <h2>梯度下降:模型到底怎么"学"</h2>
+  <p class="lead">"训练"听着玄,其实就一件事:把误差想象成一片山谷,模型是谷坡上的一个小球,每一步往最陡的下坡方向挪一点点,慢慢滚到谷底(误差最小)。点"走一步",看它往下滚。</p>
+  <div class="demo">
+    <h4>实验:小球往误差最低处滚</h4>
+    <canvas id="cvGD" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><button class="b" id="gdStep">走一步</button><button class="b" id="gdRun">自动滚到底</button><button class="b ghost" id="gdReset">重放</button></div>
+    <p class="hint" id="gdTip"></p>
+  </div>
+  <div class="anchor">每一步怎么知道哪边是下坡?靠求导算出"梯度",这就是为什么训练要 backward(反向传播)。第一章那两段 5 行代码里的 loss.backward(),干的就是这件事。</div>
+</section>
+
+<section id="lr">
+  <div class="kicker">训练 · 最关键的旋钮</div>
+  <h2>学习率:步子迈多大</h2>
+  <p class="lead">上面那"挪一点点",挪多少叫学习率。太小,半天滚不到底;太大,一步迈过头,在谷里来回弹,甚至飞出去。调它是训练里最要命的手艺。拖滑块,点"训练",看不同结果。</p>
+  <div class="demo">
+    <h4>实验:同一个山谷,不同学习率</h4>
+    <canvas id="cvLR" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><label>学习率</label><input type="range" id="lr" min="1" max="100" value="20"><span class="val" id="lrV"></span><button class="b" id="lrRun">训练</button></div>
+    <p class="hint" id="lrTip"></p>
+  </div>
+  <div class="anchor">实战里还会让学习率先小后大再慢慢变小(warmup 加衰减):开头稳一点、中间快一点、收尾细一点。调不好,loss 会直接炸成 NaN。</div>
+</section>
+
+<section id="overfit">
+  <div class="kicker">训练 · 会不会真懂</div>
+  <h2>过拟合:背答案,还是真学会</h2>
+  <p class="lead">训练久了,模型在做过的题(训练集)上越来越准,但在没见过的题(验证集)上反而开始变差。它在背答案,不是真懂了。拖滑块,看两条曲线在哪儿分家。</p>
+  <div class="demo">
+    <h4>实验:训练集 vs 没见过的题</h4>
+    <canvas id="cvOF" width="420" height="220" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><label>训练时长</label><input type="range" id="of" min="5" max="100" value="35"><span class="val" id="ofV"></span></div>
+    <p class="hint" id="ofTip"></p>
+  </div>
+  <div class="anchor">对策:数据够多够杂、加正则、在验证集开始变差的那一刻"早停"。你做生成时如果发现模型只会复刻训练视频、换个提示就崩,也是这个味道。</div>
+</section>
+
+<section id="mem">
+  <div class="kicker">训练 · 工程现实</div>
+  <h2>塞进显存:批大小、梯度累积、混合精度</h2>
+  <p class="lead">想训得快,一次喂的数据(批大小)越大越好。但显存就那么大,放不下就报 OOM。三个常用招数,让你在有限的卡上把训练跑起来。点着切换,看显存够不够。</p>
+  <div class="demo">
+    <h4>实验:把它塞进一张卡</h4>
+    <div class="ctrl"><span style="font-size:13px;color:var(--muted)">批大小</span><button class="b ghost" data-bs="8">8</button><button class="b" data-bs="32">32</button><button class="b ghost" data-bs="128">128</button></div>
+    <div class="ctrl" style="margin-top:8px"><button class="b ghost" id="memFp16">混合精度 fp16:关</button><button class="b ghost" id="memAcc">梯度累积:关</button></div>
+    <div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted)"><span>显存占用</span><span id="memNum"></span></div>
+      <div style="height:18px;background:var(--canvas);border-radius:6px;overflow:hidden;border:1px solid var(--line);margin-top:4px;position:relative"><div id="memBar" style="height:100%;width:40%;background:var(--ar);transition:.4s"></div></div>
+      <div style="font-size:11px;color:var(--faint);text-align:right;margin-top:2px">100% = 这张卡的上限</div></div>
+    <p class="hint" id="memTip" style="margin-top:10px"></p>
+  </div>
+  <div class="anchor">混合精度(fp16/bf16)几乎是白送的省显存加提速,基本都开。梯度累积让你"假装"用了大批大小:分几次攒梯度再更新一次。你那两张 B200 各 183G 已是顶配,但训大模型照样得这么抠。</div>
+</section>
+
+<section id="lora">
+  <div class="kicker">训练 · 站在巨人肩上</div>
+  <h2>微调与 LoRA:几乎没人从零训</h2>
+  <p class="lead">从零训一个大模型要烧几百万美元。99% 的情况是拿别人训好的底模,在你的数据上微调一下。LoRA 更省:把底模冻住,只在旁边加一小块可训练的"适配器",训的参数不到 1%。点着对比。</p>
+  <div class="demo">
+    <h4>实验:从头训 vs LoRA 微调</h4>
+    <div class="ctrl"><button class="b" id="loraScratch">从头训</button><button class="b ghost" id="loraTune">LoRA 微调</button></div>
+    <div id="loraView" style="display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap"></div>
+    <p class="hint" id="loraTip" style="margin-top:10px"></p>
+  </div>
+  <div class="anchor">你见过的那些"某某风格"模型、给视频模型加的各种适配,绝大多数是 LoRA。冻住底模、只训一小块,几张卡、几小时就能搞定,而且换风格只换那一小块。</div>
+</section>
+
+<section id="watch">
+  <div class="kicker">训练 · 没法一键搞定</div>
+  <h2>盯着训练跑:loss 曲线、尖刺、和 NaN</h2>
+  <p class="lead">训练不是按一下就走开。你得盯着 loss 曲线:它该稳稳往下走,但偶尔会冒尖刺,甚至突然变成 NaN(数值爆了),整个训练就废了。这时候要从上一个存档(checkpoint)恢复。看一段训练跑起来。</p>
+  <div class="demo">
+    <h4>实验:一段训练的 loss 曲线</h4>
+    <canvas id="cvWatch" width="420" height="200" style="width:100%;max-width:440px;background:#f4f3ee;image-rendering:auto"></canvas>
+    <div class="ctrl"><button class="b" id="watchGo">开始训练</button><button class="b ghost" id="watchCkpt">从 checkpoint 恢复</button></div>
+    <p class="hint" id="watchTip">点"开始训练",盯着 loss 往下走。</p>
+  </div>
+  <div class="anchor">所以训练时每隔一段就存一次 checkpoint,出事能回滚。学习率太大、数据里有脏值,都可能让 loss 炸成 NaN。这部分最像"养",得有耐心。</div>
+</section>
+
+<section id="done" style="text-align:center">
+  <div class="kicker">最后</div>
+  <h2>你现在缺的,只剩动手</h2>
+  <p class="lead" style="max-width:640px;margin:6px auto 14px">四章下来,你有了原理(怎么生成)、进阶(注意力、scaling)、系统(对齐、agent、多卡)、工程(数据、梯度、显存、微调)。这是一张相当完整的地图。</p>
+  <p class="lead" style="max-width:640px;margin:0 auto;color:var(--muted)">而你还有一样很多人没有的东西:两张 B200。把第一章那个滑块换成真代码,几十行、几分钟,就能看着一个真模型从雪花里学出图。到那一刻,你就从"看懂的人"变成"能做的人"了。</p>
+</section>
+
 </main>
 
 <footer><div class="wrap">
@@ -955,6 +1084,104 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
       d.innerHTML='<div class="tag">GPU '+(i+1)+'</div><div style="font-size:13px;margin-top:6px;color:var(--ink)">'+c[0]+'</div><div style="font-size:12px;color:var(--muted)">'+c[1]+'</div>';view.appendChild(d);}
     $('distTip').textContent=modes[m].tip;}
   btns.forEach(b=>b.onclick=()=>render(b.dataset.par));render('data');
+})();
+
+// ===== Chapter 4 =====
+// data cleaning
+(()=>{const rows0=[{t:'今天天气不错,适合出门散步。',s:'good'},{t:'【广告】点击立领 99 元优惠券!!!',s:'广告'},
+ {t:'今天天气不错,适合出门散步。',s:'重复'},{t:'��� 0x9f3a 乱码 ###',s:'乱码'},
+ {t:'机器学习就是让程序从数据里找规律。',s:'good'},{t:'aaaaaaaaaaaaaaaaaaaaaa',s:'垃圾'},
+ {t:'这本书讲了相对论的基本思想。',s:'good'}];
+  const box=$('dataRows');if(!box)return;
+  function render(cleaned){box.innerHTML='';rows0.forEach(r=>{if(cleaned&&r.s!=='good')return;const bad=r.s!=='good';const d=document.createElement('div');
+    d.style.cssText='display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:'+(cleaned?'var(--ar-soft)':'var(--paper)');
+    d.innerHTML='<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.t+'</span>'+(cleaned?'<span class="tag" style="color:var(--ar)">保留</span>':'<span class="tag" style="color:'+(bad?'#c9772a':'var(--muted)')+'">'+(bad?r.s:'ok')+'</span>');
+    box.appendChild(d);});$('dataBar').style.width=(cleaned?96:32)+'%';}
+  $('dataClean').onclick=()=>render(true);$('dataReset').onclick=()=>render(false);render(false);
+})();
+// tokenizer
+(()=>{const words=[{w:'今天',t:['今天']},{w:'机器学习',t:['机器','学习']},{w:'transformer',t:['trans','former']},
+ {w:'反卷积',t:['反','卷','积']},{w:'GPT-4',t:['G','PT','-','4']},{w:'不可思议',t:['不可','思议']}];
+  const wc=$('tokWords'),out=$('tokOut');if(!wc)return;
+  words.forEach(o=>{const b=document.createElement('button');b.textContent=o.w;b.className='b ghost';b.onclick=()=>{out.innerHTML='';
+    o.t.forEach((tk,i)=>{const s=document.createElement('span');s.textContent=tk;s.style.cssText='padding:6px 11px;border-radius:7px;background:var(--diff-soft);color:var(--diff);font-size:15px;opacity:0;transition:.3s';out.appendChild(s);setTimeout(()=>s.style.opacity=1,i*120);});
+    const cc=document.createElement('span');cc.className='tag';cc.style.marginLeft='6px';cc.textContent='= '+o.t.length+' 个 token';setTimeout(()=>out.appendChild(cc),o.t.length*120);
+    $('tokTip').textContent='"'+o.w+'" 切成 '+o.t.length+' 个 token。'+(o.t.length===1?'常见词,一整块。':'生僻或偏长,被拆成几块。');};wc.appendChild(b);});
+})();
+// gradient descent
+(()=>{const c=$('cvGD');if(!c)return;const ctx=c.getContext('2d'),W=420,H=220;
+  const lossf=x=>Math.pow(2*x-1,2),grad=x=>4*(2*x-1);const px=x=>30+x*(W-60),yc=x=>40+140*(1-lossf(x));let xb=0.06;
+  function draw(){ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#c2bfb6';ctx.lineWidth=2;ctx.beginPath();
+    for(let i=0;i<=100;i++){const x=i/100;i?ctx.lineTo(px(x),yc(x)):ctx.moveTo(px(x),yc(x));}ctx.stroke();
+    ctx.fillStyle='#6b54d3';ctx.beginPath();ctx.arc(px(xb),yc(xb)-8,8,0,7);ctx.fill();
+    ctx.fillStyle='#6b6a65';ctx.font='12px sans-serif';ctx.fillText('误差(loss) = '+lossf(xb).toFixed(3),14,20);}
+  function step(){xb-=0.06*grad(xb);xb=Math.max(0,Math.min(1,xb));draw();$('gdTip').textContent=Math.abs(xb-0.5)<0.02?'到谷底了,误差最小,这一处的参数就学到位了。':'往下坡挪了一点,误差变小了。继续点。';}
+  $('gdStep').onclick=step;$('gdReset').onclick=()=>{xb=0.06;draw();$('gdTip').textContent='';};
+  $('gdRun').onclick=()=>{let n=0;const iv=setInterval(()=>{step();if(++n>30||Math.abs(xb-0.5)<0.01)clearInterval(iv);},110);};draw();
+})();
+// learning rate
+(()=>{const c=$('cvLR');if(!c)return;const ctx=c.getContext('2d'),W=420,H=220;
+  const lossf=x=>Math.pow(2*x-1,2),grad=x=>4*(2*x-1);const cl=x=>Math.max(0,Math.min(1,x));const px=x=>30+x*(W-60),yc=x=>40+140*(1-Math.min(1.3,lossf(x)));
+  function base(){ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#c2bfb6';ctx.lineWidth=2;ctx.beginPath();
+    for(let i=0;i<=100;i++){const x=i/100;i?ctx.lineTo(px(x),yc(x)):ctx.moveTo(px(x),yc(x));}ctx.stroke();}
+  function upd(){$('lrV').textContent=(+$('lr').value/250).toFixed(3);}
+  $('lr').addEventListener('input',upd);upd();base();
+  $('lrRun').onclick=()=>{base();const lr=+$('lr').value/250;let x=0.07,n=0,prev=null;
+    const iv=setInterval(()=>{const cx=cl(x),y=yc(cx);
+      if(prev){ctx.strokeStyle='rgba(107,84,211,.4)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(prev[0],prev[1]);ctx.lineTo(px(cx),y-8);ctx.stroke();}
+      ctx.fillStyle='#6b54d3';ctx.beginPath();ctx.arc(px(cx),y-8,5,0,7);ctx.fill();prev=[px(cx),y-8];x-=lr*grad(x);
+      if(x<-0.35||x>1.35){clearInterval(iv);$('lrTip').textContent='学习率太大,一步迈过头,飞出山谷,loss 发散(实战里就是炸成 NaN)。';return;}
+      if(++n>45){clearInterval(iv);$('lrTip').textContent=Math.abs(x-0.5)<0.05?'学习率合适,平稳滚到谷底。':'学习率偏小,挪太慢,这么多步还没到底。';}},80);};
+})();
+// overfitting
+(()=>{const c=$('cvOF');if(!c)return;const ctx=c.getContext('2d'),W=420,H=220;
+  const tr=s=>0.92/(1+s*0.06)+0.04,val=s=>0.92/(1+s*0.06)+0.04+Math.pow(Math.max(0,s-40)/100,2)*0.95;
+  const px=s=>40+(s/100)*(W-58),py=l=>18+l*(H-46);
+  function upd(){const cur=+$('of').value;$('ofV').textContent=cur;ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='#d8d5cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(40,16);ctx.lineTo(40,H-26);ctx.lineTo(W-16,H-26);ctx.stroke();
+    ctx.lineWidth=2.5;ctx.strokeStyle='#0f8a6a';ctx.beginPath();for(let s=0;s<=100;s++){s?ctx.lineTo(px(s),py(tr(s))):ctx.moveTo(px(s),py(tr(s)));}ctx.stroke();
+    ctx.strokeStyle='#c9772a';ctx.beginPath();for(let s=0;s<=100;s++){s?ctx.lineTo(px(s),py(val(s))):ctx.moveTo(px(s),py(val(s)));}ctx.stroke();
+    ctx.strokeStyle='#6b54d3';ctx.lineWidth=1.5;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(px(cur),16);ctx.lineTo(px(cur),H-26);ctx.stroke();ctx.setLineDash([]);
+    ctx.font='12px sans-serif';ctx.fillStyle='#0f8a6a';ctx.fillText('训练集',W-96,38);ctx.fillStyle='#c9772a';ctx.fillText('没见过的题',W-96,56);
+    $('ofTip').textContent=cur<42?'两条还贴在一起,模型在真学,继续训。':'训练集还在降,但"没见过的题"开始回升了,这就是过拟合,该早停了。';}
+  $('of').addEventListener('input',upd);upd();
+})();
+// fit into memory
+(()=>{if(!$('memBar'))return;let bs=32,fp16=false,acc=false;
+  function upd(){const pct=Math.round(bs*1.1*(fp16?0.55:1)*(acc?0.42:1));
+    $('memBar').style.width=Math.min(100,pct)+'%';$('memBar').style.background=pct>100?'#c9772a':'var(--ar)';$('memNum').textContent=pct+'%';
+    $('memTip').textContent=pct>100?'放不下,报 OOM(显存爆了)。开混合精度、减小批大小、或用梯度累积。':'放得下。批大小越大训得越快,但越吃显存。';
+    document.querySelectorAll('[data-bs]').forEach(b=>b.className='b'+(+b.dataset.bs===bs?'':' ghost'));}
+  document.querySelectorAll('[data-bs]').forEach(b=>b.onclick=()=>{bs=+b.dataset.bs;upd();});
+  $('memFp16').onclick=()=>{fp16=!fp16;$('memFp16').textContent='混合精度 fp16:'+(fp16?'开':'关');$('memFp16').className='b'+(fp16?'':' ghost');upd();};
+  $('memAcc').onclick=()=>{acc=!acc;$('memAcc').textContent='梯度累积:'+(acc?'开':'关');$('memAcc').className='b'+(acc?'':' ghost');upd();};
+  upd();
+})();
+// LoRA
+(()=>{const view=$('loraView');if(!view)return;
+  function render(mode){view.innerHTML='';const big=document.createElement('div');
+    big.style.cssText='flex:1;min-width:150px;border-radius:10px;padding:22px 14px;text-align:center;border:2px solid '+(mode==='scratch'?'var(--ar)':'var(--line)')+';background:'+(mode==='scratch'?'var(--ar-soft)':'var(--canvas)');
+    big.innerHTML='<div style="font-size:14px;font-weight:600;color:'+(mode==='scratch'?'#0a5e48':'var(--muted)')+'">底模 · 几十亿参数</div><div class="tag" style="margin-top:4px">'+(mode==='scratch'?'全部要训(慢、贵)':'冻住不动')+'</div>';
+    view.appendChild(big);
+    if(mode==='tune'){const ad=document.createElement('div');ad.style.cssText='flex:0 0 120px;border-radius:10px;padding:22px 10px;text-align:center;border:2px solid var(--ar);background:var(--ar-soft)';
+      ad.innerHTML='<div style="font-size:13px;font-weight:600;color:#0a5e48">LoRA 适配器</div><div class="tag" style="margin-top:4px">只训不到 1%</div>';view.appendChild(ad);}
+    $('loraScratch').className='b'+(mode==='scratch'?'':' ghost');$('loraTune').className='b'+(mode==='tune'?'':' ghost');
+    $('loraTip').textContent=mode==='scratch'?'从头训:整个底模都要更新,需要海量数据和算力,几乎只有大公司干得起。':'LoRA:底模冻住,只训旁边那一小块,参数不到 1%,几张卡几小时就能搞定。';}
+  $('loraScratch').onclick=()=>render('scratch');$('loraTune').onclick=()=>render('tune');render('scratch');
+})();
+// watch the run
+(()=>{const c=$('cvWatch');if(!c)return;const ctx=c.getContext('2d'),W=420,H=200;let pts=[],timer=null;
+  function draw(){ctx.fillStyle='#f4f3ee';ctx.fillRect(0,0,W,H);ctx.strokeStyle='#d8d5cc';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(36,12);ctx.lineTo(36,H-24);ctx.lineTo(W-14,H-24);ctx.stroke();
+    ctx.fillStyle='#9a988f';ctx.font='11px sans-serif';ctx.fillText('loss',8,22);ctx.fillText('步数 →',W-58,H-9);
+    ctx.strokeStyle='#6b54d3';ctx.lineWidth=2;ctx.beginPath();pts.forEach((l,i)=>{const x=36+(i/120)*(W-52),y=16+Math.min(1.6,l)*(H-44)/1.6;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();
+    if(pts[pts.length-1]>1.4){ctx.fillStyle='#c9772a';ctx.font='13px sans-serif';ctx.fillText('loss = NaN,训练废了',W/2-58,42);}}
+  function stop(){if(timer){clearInterval(timer);timer=null;}}
+  $('watchGo').onclick=()=>{pts=[1.0];stop();timer=setInterval(()=>{const i=pts.length;let l=0.9/(1+i*0.05)+0.06+Math.sin(i)*0.02;if(i===55)l=1.6;pts.push(l);draw();
+    if(l>1.4){stop();$('watchTip').textContent='出事了:loss 飙成 NaN。点"从 checkpoint 恢复"回滚到出事前。';}
+    else if(i>=120){stop();$('watchTip').textContent='跑完了,loss 平稳收敛,这次训练成功。';}
+    else $('watchTip').textContent='训练中,盯着 loss 往下走(第 '+i+' 步)。';},45);};
+  $('watchCkpt').onclick=()=>{if(pts.length>50)pts=pts.slice(0,50);draw();$('watchTip').textContent='从第 50 步的存档恢复了,跳过出事的地方,可以接着训。';};
+  draw();
 })();
 </script>
 </body>
