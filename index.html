@@ -292,9 +292,9 @@ footer{padding:40px 0 70px;color:var(--muted);font-size:14px;text-align:center}
 <section id="causal">
   <div class="kicker">自回归 · 为什么只看左边</div>
   <h2>因果注意力:只能看过去,不能偷看未来</h2>
-  <p class="lead">接龙时,第 3 个词只能参考第 1、2 个,<b>不能看后面还没生成的</b>。模型内部用一个"遮罩"强制做到这点。把鼠标放到某一行,看它"能看到谁"。</p>
+  <p class="lead">接龙时,第 3 个词只能参考第 1、2 个,<b>不能看后面还没生成的</b>。模型内部用一个"遮罩"强制做到这点。点一行(手机)或把鼠标移上去,看它"能看到谁"。</p>
   <div class="demo">
-    <h4>实验:每个词能看到谁(把鼠标移到左边的字上)</h4>
+    <h4>实验:每个词能看到谁(点或移到左边的字上)</h4>
     <div id="attnGrid" style="max-width:380px"></div>
     <p class="hint" style="margin-top:10px"><span style="color:var(--ar)">■</span> 能看到(过去 + 自己) · <span style="color:var(--faint)">■</span> 被挡住(未来)</p>
   </div>
@@ -735,9 +735,10 @@ function renderNoised(ctx,clean,noise,t){ // t in [0,1]
     else if(cls==='on'){d.style.background='var(--ar-soft)';d.style.border='1px solid #bfe6d7';}
     else if(cls==='off'){d.style.background='var(--canvas)';}
     return d;}
-  g.addEventListener('mouseover',e=>{const rh=e.target.dataset.rowh;if(rh===undefined)return;
+  function hl(e){const rh=e.target.dataset.rowh;if(rh===undefined)return;
     [...g.querySelectorAll('.cell')].forEach(c=>{if(c.dataset.row!==undefined)c.style.outline='none';});
-    [...g.querySelectorAll(`.cell`)].forEach(c=>{if(c.dataset.row==rh)c.style.outline='2px solid var(--ar)';});});
+    [...g.querySelectorAll('.cell')].forEach(c=>{if(c.dataset.row==rh)c.style.outline='2px solid var(--ar)';});}
+  g.addEventListener('mouseover',hl);g.addEventListener('click',hl);
 })();
 
 // ---------- 10. world model ----------
